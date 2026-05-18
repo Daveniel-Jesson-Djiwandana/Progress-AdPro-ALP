@@ -26,19 +26,19 @@ public class VectorIcon implements Icon {
     public void paintIcon(Component component, Graphics graphics, int xOffset, int yOffset) {
         Graphics2D graphics2d = (Graphics2D) graphics.create();
         
-        // Setup rendering quality and translation
+        
         graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         graphics2d.translate(xOffset, yOffset);
         
-        // Scale from native 24x24 coordinate system to requested size
+        
         double scaleFactor = iconSize / 24.0;
         graphics2d.scale(scaleFactor, scaleFactor);
         
-        // Setup line styling
+        
         graphics2d.setColor(iconColor);
         graphics2d.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         
-        // Draw the specific vector shape
+        
         switch (iconType) {
             case FIRE:
                 drawFireIcon(graphics2d);
@@ -168,7 +168,7 @@ public class VectorIcon implements Icon {
         outerFlame.curveTo(20, 16, 18, 22, 12, 22);
         g2.fill(outerFlame);
 
-        // Subtracted inner flame using background color
+        
         g2.setColor(UITheme.BG_DARK);
         Path2D innerFlame = new Path2D.Double();
         innerFlame.moveTo(12, 18);

@@ -9,7 +9,6 @@ public class AuthService {
 
     private static final String STORAGE_FILE = "users.txt";
 
-    // Standard login flow using the HashMap for speed
     public static Account handleLogin(String username, String password) {
         Account account = Database.findUser(username);
 
@@ -20,7 +19,7 @@ public class AuthService {
         return null;
     }
 
-    // Registers a regular user and saves to both RAM and Disk
+    
     public static String registerNewUser(String name, String email, String username,
             String password, String phone) {
         String error = validate(username, password);
@@ -34,7 +33,7 @@ public class AuthService {
         return null;
     }
 
-    // Registers an admin and saves to both RAM and Disk
+    
     public static String registerNewAdmin(String name, String email, String username,
             String password, String phone,
             String badge, String rank) {
@@ -53,7 +52,7 @@ public class AuthService {
         return null;
     }
 
-    // Validates inputs before allowing registration
+    
     private static String validate(String username, String password) {
         if (username.isBlank() || password.isBlank())
             return "Input tidak boleh kosong.";
@@ -64,11 +63,11 @@ public class AuthService {
         return null;
     }
 
-    // Permanent storage logic
+    
     private static void saveToDisk(Account account) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(STORAGE_FILE, true))) {
             
-            // We need to grab the phone number safely
+            
             String phone = "N/A";
             if (account instanceof User) {
                 phone = ((User) account).getPhoneNumber();
@@ -100,7 +99,7 @@ public class AuthService {
         try (Scanner reader = new Scanner(file)) {
             while (reader.hasNextLine()) {
                 String line = reader.nextLine();
-                // Split by the pipe symbol
+                
                 String[] data = line.split("\\|");
                 
                 if (data.length >= 6) {
@@ -112,15 +111,15 @@ public class AuthService {
                     String phone = data[5];
 
                     if (role.equalsIgnoreCase("admin")) {
-                        // Creating the admin object
+                        
                         Admin adminAccount = new Admin(name, email, username, password, phone, "N/A", "Staff");
-                        // This method (inside Admin/User model) adds the account to the Database HashMap
+                        
                         adminAccount.register(); 
                         Database.getFireStation().addEmployee(adminAccount);
                     } else {
-                        // Creating the user object
+                        
                         User userAccount = new User(name, email, username, password, phone, "user");
-                        // This adds it to the Database HashMap
+                        
                         userAccount.register(); 
                     }
                 }
