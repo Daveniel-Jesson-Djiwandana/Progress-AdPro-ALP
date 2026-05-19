@@ -129,7 +129,7 @@ public class AuthService {
         }
     }
 
-    public static void processLogout() {
+    public static void logout() {
         Database.logout();
     }
 }
