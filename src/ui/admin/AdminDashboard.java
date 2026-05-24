@@ -13,6 +13,7 @@ import java.awt.*;
 public class AdminDashboard extends JPanel {
 
     public static final String CARD_AUTO       = "AUTO_FIRE";
+    public static final String CARD_DISPATCH   = "DISPATCH";
     public static final String CARD_STATUS     = "STATUS";
     public static final String CARD_HISTORY    = "HISTORY";
 
@@ -23,6 +24,7 @@ public class AdminDashboard extends JPanel {
     private final JPanel     contentPanel  = new JPanel(contentLayout);
 
     private AutoFirePanel     autoFirePanel;
+    private DispatchPanel     dispatchPanel;
     private AdminStatusPanel  statusPanel;
     private AdminHistoryPanel historyPanel;
 
@@ -36,16 +38,19 @@ public class AdminDashboard extends JPanel {
     private void buildUI() {
         add(buildSidebar(), BorderLayout.WEST);
 
-        autoFirePanel   = new AutoFirePanel(() -> {
-            if(statusPanel != null) statusPanel.refresh();
+        autoFirePanel  = new AutoFirePanel(() -> {
+            if (statusPanel   != null) statusPanel.refresh();
+            if (dispatchPanel != null) dispatchPanel.refresh();
         });
-        statusPanel     = new AdminStatusPanel();
-        historyPanel    = new AdminHistoryPanel();
+        dispatchPanel  = new DispatchPanel();
+        statusPanel    = new AdminStatusPanel();
+        historyPanel   = new AdminHistoryPanel();
 
         contentPanel.setBackground(UITheme.BG_DARK);
-        contentPanel.add(autoFirePanel,   CARD_AUTO);
-        contentPanel.add(statusPanel,     CARD_STATUS);
-        contentPanel.add(historyPanel,    CARD_HISTORY);
+        contentPanel.add(autoFirePanel,  CARD_AUTO);
+        contentPanel.add(dispatchPanel,  CARD_DISPATCH);
+        contentPanel.add(statusPanel,    CARD_STATUS);
+        contentPanel.add(historyPanel,   CARD_HISTORY);
 
         add(contentPanel, BorderLayout.CENTER);
         showContent(CARD_AUTO);
@@ -84,12 +89,15 @@ public class AdminDashboard extends JPanel {
         header.add(Box.createVerticalStrut(1));
         header.add(lblUsername);
 
-        JLabel sSim  = sectionLabel("SIMULASI KEBAKARAN");
-        RoundedButton bAuto   = navBtn("Sistem Auto Fire", VectorIcon.Type.FIRE, CARD_AUTO);
+        JLabel sSim    = sectionLabel("SIMULASI KEBAKARAN");
+        RoundedButton bAuto     = navBtn("Sistem Auto Fire",   VectorIcon.Type.FIRE,    CARD_AUTO);
 
-        JLabel sData = sectionLabel("DATA & STATUS");
-        RoundedButton bStatus = navBtn("Status Insiden", VectorIcon.Type.STATUS, CARD_STATUS);
-        RoundedButton bHistory = navBtn("Riwayat Laporan", VectorIcon.Type.HISTORY, CARD_HISTORY);
+        JLabel sOps    = sectionLabel("OPERASIONAL");
+        RoundedButton bDispatch = navBtn("Dispatch Kendaraan", VectorIcon.Type.TRUCK,   CARD_DISPATCH);
+
+        JLabel sData   = sectionLabel("DATA & STATUS");
+        RoundedButton bStatus   = navBtn("Status Insiden",     VectorIcon.Type.STATUS,  CARD_STATUS);
+        RoundedButton bHistory  = navBtn("Riwayat Laporan",    VectorIcon.Type.HISTORY, CARD_HISTORY);
 
         RoundedButton btnLogout = new RoundedButton("Keluar", UITheme.BG_CARD);
         btnLogout.setIcon(new VectorIcon(VectorIcon.Type.LOGOUT, 16, UITheme.TEXT_PRIMARY));
@@ -102,6 +110,11 @@ public class AdminDashboard extends JPanel {
         sidebar.add(Box.createVerticalStrut(8));
         sidebar.add(sSim);
         sidebar.add(bAuto);
+        sidebar.add(Box.createVerticalStrut(8));
+        addDiv(sidebar);
+        sidebar.add(Box.createVerticalStrut(4));
+        sidebar.add(sOps);
+        sidebar.add(bDispatch);
         sidebar.add(Box.createVerticalStrut(8));
         addDiv(sidebar);
         sidebar.add(Box.createVerticalStrut(4));
@@ -149,8 +162,9 @@ public class AdminDashboard extends JPanel {
     public void showContent(String card) {
         contentLayout.show(contentPanel, card);
         switch (card) {
-            case CARD_STATUS:  statusPanel.refresh(); break;
-            case CARD_HISTORY: historyPanel.refresh(); break;
+            case CARD_DISPATCH: dispatchPanel.refresh(); break;
+            case CARD_STATUS:   statusPanel.refresh();   break;
+            case CARD_HISTORY:  historyPanel.refresh();  break;
         }
     }
 

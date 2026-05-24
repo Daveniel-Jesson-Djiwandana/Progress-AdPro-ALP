@@ -37,14 +37,6 @@ public class Incident implements Comparable<Incident> {
     private LocalDateTime  dispatchStartTime;   // when first truck was sent
     private int            dispatchProgress;    // 0–100 %, simulated handling progress
 
-    private static final String[] NAMES = {
-        "Budi Santoso","Sari Dewi","Ahmad Fauzi","Linda Pratiwi",
-        "Reza Mahendra","Putri Rahayu","Dimas Saputra","Fitri Wulandari","Andi Wijaya","Maya Sari"
-    };
-    private static final String[] SPOTS = {
-        "Lantai 1","Lantai 2","Lantai 3","Basement","Lobby","Ruang Server"
-    };
-
     public Incident(Structure structure, IncidentSeverity severity, String description,
                     int fireIntensity, String reportedBy) {
         this.id             = counter++;
@@ -59,16 +51,10 @@ public class Incident implements Comparable<Incident> {
         this.trucksAssigned = 0;
         this.dispatchProgress = 0;
         this.dispatchStartTime = null;
-        generateCivilians();
     }
 
-    private void generateCivilians() {
-        CivilianCondition[] conds = CivilianCondition.values();
-        int count = Math.min(structure.getCivilianCount(), NAMES.length);
-        for (int i = 0; i < count; i++) {
-            CivilianCondition c = conds[(int)(Math.random() * conds.length)];
-            affectedCivilians.add(new Civilian(NAMES[i], c, SPOTS[(int)(Math.random() * SPOTS.length)]));
-        }
+    public void addCivilian(Civilian c) {
+        affectedCivilians.add(c);
     }
 
     public void calculatePriorityScore(double victimWeight, double areaWeight, double intensityWeight) {
