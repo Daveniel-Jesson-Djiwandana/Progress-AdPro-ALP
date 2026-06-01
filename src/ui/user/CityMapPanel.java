@@ -197,7 +197,7 @@ public class CityMapPanel extends JPanel {
             g2.setColor(new Color(40, 50, 65));
             g2.fillRect(0, 0, panelW, panelH);
             g2.setColor(UITheme.TEXT_SECONDARY);
-            g2.setFont(new Font("SansSerif", Font.BOLD, 14));
+            g2.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 14));
             g2.drawString("citymap.png tidak ditemukan", 20, drawH / 2);
         }
 
@@ -211,7 +211,7 @@ public class CityMapPanel extends JPanel {
             g2.fillOval(cx - 3, cy - 3, 6, 6);
 
             String lbl = toMapX(cx) + " , " + toMapY(cy);
-            Font f = new Font("SansSerif", Font.BOLD, 11);
+            Font f = new Font(UITheme.FONT_FAMILY, Font.BOLD, 11);
             g2.setFont(f);
             FontMetrics fm = g2.getFontMetrics(f);
             int tw = fm.stringWidth(lbl) + 12, th = fm.getHeight() + 6;
@@ -231,7 +231,7 @@ public class CityMapPanel extends JPanel {
     }
     private void drawZoomHint(Graphics2D g2, int w, int h) {
         String hint = String.format("Ctrl+Scroll=Zoom | Drag=Geser  %.0f%%", zoom * 100);
-        Font f = new Font("SansSerif", Font.PLAIN, 10);
+        Font f = new Font(UITheme.FONT_FAMILY, Font.PLAIN, 10);
         g2.setFont(f);
         FontMetrics fm = g2.getFontMetrics(f);
         int tw = fm.stringWidth(hint) + 10, th = fm.getHeight() + 4;

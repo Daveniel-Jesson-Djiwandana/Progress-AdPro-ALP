@@ -66,11 +66,9 @@ public class AdminHistoryPanel extends JPanel {
         table.setBackground(UITheme.BG_SURFACE);
         table.setForeground(UITheme.TEXT_PRIMARY);
         table.setGridColor(UITheme.BORDER);
-        table.setSelectionBackground(new Color(70, 35, 35));
+        table.setSelectionBackground(UITheme.ACCENT);
         table.setShowVerticalLines(false);
-        table.getTableHeader().setFont(UITheme.FONT_SUB);
-        table.getTableHeader().setBackground(UITheme.BG_CARD);
-        table.getTableHeader().setForeground(UITheme.ACCENT_ORANGE);
+        UITheme.styleTableHeader(table, UITheme.FONT_SUB);
 
         // Detail panel shown on row selection
         taDetail = new JTextArea(5, 30);

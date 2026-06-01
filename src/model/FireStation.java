@@ -5,12 +5,16 @@ import java.util.ArrayList;
 public class FireStation {
     private String name;
     private String address;
+    private double latitude;
+    private double longitude;
     private ArrayList<Admin> employees;    // required data structure
     private ArrayList<Firetruck> firetrucks; // required data structure
 
-    public FireStation(String name, String address) {
+    public FireStation(String name, String address, double latitude, double longitude) {
         this.name = name;
         this.address = address;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.employees = new ArrayList<>();
         this.firetrucks = new ArrayList<>();
     }
@@ -20,6 +24,8 @@ public class FireStation {
 
     public String getName()                      { return name; }
     public String getAddress()                   { return address; }
+    public double getLatitude()                  { return latitude; }
+    public double getLongitude()                 { return longitude; }
     public ArrayList<Admin> getEmployees()       { return employees; }
     public ArrayList<Firetruck> getFiretrucks()  { return firetrucks; }
 

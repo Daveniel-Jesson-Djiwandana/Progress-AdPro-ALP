@@ -16,24 +16,19 @@ public class ReportIncidentPanel extends JPanel {
     private final UserDashboard parent;
 
     private JTextField tfMapCoord;
+    private JTextField tfAddress;
     private JTextArea  taDesc;
-    private JComboBox<IncidentSeverity> cbSeverity;
+    private JComboBox<BuildingCategory>    cbBuildingCat;
+    private JComboBox<String>              cbBuildingSubType;
+    private JComboBox<IncidentSeverity>    cbSeverity;
     private JSpinner   spVictims;
     private JSpinner   spArea;
-    private JSlider    sliderIntensity;
-    private JLabel     lblIntensityValue;
     private JLabel     lblResult;
-    private CityMapPanel mapPanel;
+    private OsmCityMapPanel mapPanel;
     private JLabel     lblZoom;
 
-    private int mapX = -1, mapY = -1;
+    private double mapLat = Double.NaN, mapLon = Double.NaN;
     private JPanel sidebarPanel;
-
-    private static final String[] INTENSITY_LABELS = {
-        "", "1 - Nyala kecil", "2 - Api mulai", "3 - Api rendah",
-        "4 - Api sedang", "5 - Cukup besar", "6 - Api besar",
-        "7 - Sangat besar", "8 - Berbahaya", "9 - Kritis", "10 - Bencana"
-    };
 
     public ReportIncidentPanel(UserDashboard parent) {
         this.parent = parent;
@@ -43,24 +38,24 @@ public class ReportIncidentPanel extends JPanel {
     }
 
     private void buildUI() {
-        mapPanel = new CityMapPanel((px, py) -> {
-            mapX = px; mapY = py;
-            tfMapCoord.setText(px + " , " + py);
-            tfMapCoord.setForeground(UITheme.ACCENT_ORANGE);
+        mapPanel = new OsmCityMapPanel((lat, lon) -> {
+            mapLat = lat; mapLon = lon;
+            tfMapCoord.setText(String.format("%.5f, %.5f", lat, lon));
+            tfMapCoord.setForeground(UITheme.ACCENT);
             // Auto-buka sidebar jika sedang tersembunyi
             if (sidebarPanel != null && !sidebarPanel.isVisible())
                 sidebarPanel.setVisible(true);
+            reverseGeocode(lat, lon);
         });
 
-        JScrollPane mapScroll = mapPanel.createScrollPane();
-        mapScroll.setOpaque(false);
+        JPanel mapScroll = mapPanel.createScrollPane();
 
         JPanel zoomBar = buildZoomBar();
         sidebarPanel = buildSidebar();
 
         // Tombol buka form (muncul saat sidebar ditutup)
         JButton btnOpenForm = new JButton("📋 Form Laporan");
-        btnOpenForm.setFont(new Font("SansSerif", Font.BOLD, 12));
+        btnOpenForm.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 12));
         btnOpenForm.setForeground(UITheme.TEXT_PRIMARY);
         btnOpenForm.setBackground(UITheme.ACCENT_RED);
         btnOpenForm.setBorderPainted(false);
@@ -109,7 +104,7 @@ public class ReportIncidentPanel extends JPanel {
         JButton btnIn  = zBtn("+");
         JButton btnRst = zBtn("⊙");
         lblZoom = new JLabel("100%");
-        lblZoom.setFont(new Font("SansSerif", Font.BOLD, 10));
+        lblZoom.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 10));
         lblZoom.setForeground(UITheme.TEXT_SECONDARY);
 
         btnOut.addActionListener(e -> { mapPanel.zoomOut(); updateZoomLabel(); });
@@ -125,7 +120,7 @@ public class ReportIncidentPanel extends JPanel {
 
     private JButton zBtn(String txt) {
         JButton b = new JButton(txt);
-        b.setFont(new Font("SansSerif", Font.BOLD, 13));
+        b.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 13));
         b.setForeground(UITheme.TEXT_PRIMARY);
         b.setBackground(UITheme.BG_CARD);
         b.setBorderPainted(false);
@@ -159,7 +154,7 @@ public class ReportIncidentPanel extends JPanel {
         sub.setForeground(UITheme.TEXT_SECONDARY);
 
         JButton btnClose = new JButton("✕");
-        btnClose.setFont(new Font("SansSerif", Font.BOLD, 14));
+        btnClose.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 14));
         btnClose.setForeground(UITheme.TEXT_SECONDARY);
         btnClose.setBackground(new Color(40, 20, 20));
         btnClose.setBorder(BorderFactory.createCompoundBorder(
@@ -196,6 +191,13 @@ public class ReportIncidentPanel extends JPanel {
         tfMapCoord.setForeground(UITheme.TEXT_SECONDARY);
         row = addField(form, gc, row, "Koordinat Lokasi", tfMapCoord);
 
+        // Alamat (read-only, diisi oleh geocoding)
+        tfAddress = tf();
+        tfAddress.setEditable(false);
+        tfAddress.setText("Klik peta untuk deteksi alamat...");
+        tfAddress.setForeground(UITheme.TEXT_SECONDARY);
+        row = addField(form, gc, row, "Alamat Lokasi (Nominatim)", tfAddress);
+
         // Severity
         cbSeverity = new JComboBox<>(IncidentSeverity.values());
         cbSeverity.setRenderer(new DefaultListCellRenderer() {
@@ -226,36 +228,55 @@ public class ReportIncidentPanel extends JPanel {
         twoCol.add(colA); twoCol.add(colB);
         form.add(twoCol, gc);
 
-        // Intensitas
-        sliderIntensity = new JSlider(1, 10, 5);
-        sliderIntensity.setMajorTickSpacing(1);
-        sliderIntensity.setPaintTicks(true);
-        sliderIntensity.setPaintLabels(true);
-        sliderIntensity.setSnapToTicks(true);
-        sliderIntensity.setOpaque(false);
-        sliderIntensity.setForeground(UITheme.TEXT_SECONDARY);
-
-        lblIntensityValue = new JLabel(INTENSITY_LABELS[5]);
-        lblIntensityValue.setFont(new Font("SansSerif", Font.BOLD, 11));
-        lblIntensityValue.setForeground(UITheme.ACCENT_ORANGE);
-        sliderIntensity.addChangeListener(e -> {
-            int v = sliderIntensity.getValue();
-            lblIntensityValue.setText(INTENSITY_LABELS[v]);
-            lblIntensityValue.setForeground(v <= 3 ? UITheme.SUCCESS : v <= 6 ? UITheme.ACCENT_ORANGE : UITheme.DANGER);
+        // ── Kategori Bangunan ─────────────────────────────────────────────────
+        cbBuildingCat = new JComboBox<>(BuildingCategory.values());
+        cbBuildingCat.setBackground(UITheme.BG_SURFACE);
+        cbBuildingCat.setForeground(UITheme.TEXT_PRIMARY);
+        cbBuildingCat.setRenderer(new DefaultListCellRenderer() {
+            @Override public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f) {
+                super.getListCellRendererComponent(l, v, i, s, f);
+                setBackground(s ? UITheme.ACCENT : UITheme.BG_SURFACE);
+                setForeground(UITheme.TEXT_PRIMARY);
+                return this;
+            }
         });
+        row = addField(form, gc, row, "Kategori Bangunan", cbBuildingCat);
 
+        // ── Subtipe Bangunan — diupdate otomatis saat kategori berubah ────────
+        cbBuildingSubType = new JComboBox<>(BuildingCategory.HUNIAN.getSubTypes());
+        cbBuildingSubType.setBackground(UITheme.BG_SURFACE);
+        cbBuildingSubType.setForeground(UITheme.TEXT_PRIMARY);
+        cbBuildingSubType.setEditable(false);
+        cbBuildingCat.addActionListener(e -> {
+            BuildingCategory cat = (BuildingCategory) cbBuildingCat.getSelectedItem();
+            if (cat != null) {
+                cbBuildingSubType.setModel(new DefaultComboBoxModel<>(cat.getSubTypes()));
+            }
+        });
+        row = addField(form, gc, row, "Jenis Bangunan", cbBuildingSubType);
+
+        // Badge preview objek terbakar
+        JLabel lblPreview = new JLabel("Contoh: " + BuildingCategory.HUNIAN.getSubTypes()[0]
+            + " (" + BuildingCategory.HUNIAN.getLabel() + ")");
+        lblPreview.setFont(new Font(UITheme.FONT_FAMILY, Font.ITALIC, 10));
+        lblPreview.setForeground(UITheme.TEXT_MUTED);
+        Runnable updatePreview = () -> {
+            BuildingCategory cat = (BuildingCategory) cbBuildingCat.getSelectedItem();
+            Object subType = cbBuildingSubType.getSelectedItem();
+            if (cat != null && subType != null)
+                lblPreview.setText("Objek terbakar: " + subType + " (" + cat.getLabel() + ")");
+        };
+        cbBuildingCat.addActionListener(e -> updatePreview.run());
+        cbBuildingSubType.addActionListener(e -> updatePreview.run());
         gc.gridy = row++;
-        JPanel sliderWrap = new JPanel(new BorderLayout(0, 2)); sliderWrap.setOpaque(false);
-        sliderWrap.add(fLbl("Intensitas Api (1–10)"), BorderLayout.NORTH);
-        sliderWrap.add(sliderIntensity, BorderLayout.CENTER);
-        lblIntensityValue.setHorizontalAlignment(SwingConstants.CENTER);
-        sliderWrap.add(lblIntensityValue, BorderLayout.SOUTH);
-        form.add(sliderWrap, gc);
+        form.add(lblPreview, gc);
+
 
         // Deskripsi
         JTextArea taDescLocal = ta(2);
         this.taDesc = taDescLocal;
-        row = addField(form, gc, row, "Deskripsi", taDescLocal);
+        row = addField(form, gc, row, "Deskripsi Singkat", taDescLocal);
+
 
         gc.gridy = row;
         gc.weighty = 1;
@@ -294,14 +315,23 @@ public class ReportIncidentPanel extends JPanel {
     private void submit() {
         String user = Database.getCurrentUser() != null ? Database.getCurrentUser().getUsername() : "unknown";
 
-        if (mapX < 0) {
+        if (Double.isNaN(mapLat)) {
             lblResult.setForeground(UITheme.DANGER);
             lblResult.setText("Klik dulu titik di peta.");
             return;
         }
 
-        // Lokasi = koordinat grid peta, tidak perlu nama manual
-        String fullLoc = "Grid [" + mapX + "," + mapY + "]";
+        // Lokasi = koordinat GPS + alamat (jika terdeteksi)
+        String addrText = tfAddress.getText().trim();
+        String fullLoc;
+        if (addrText.isEmpty() || addrText.equals("Klik peta untuk pilih titik...") || 
+            addrText.equals("Klik peta untuk deteksi alamat...") || addrText.equals("Mencari alamat...") || 
+            addrText.equals("Gagal mendapatkan alamat") || addrText.equals("Alamat tidak ditemukan")) {
+            fullLoc = String.format("Lat: %.5f, Lon: %.5f", mapLat, mapLon);
+        } else {
+            fullLoc = String.format("Lat: %.5f, Lon: %.5f (%s)", mapLat, mapLon, addrText);
+        }
+
         String desc    = taDesc.getText().trim();
         if (desc.isEmpty()) desc = "Kebakaran dilaporkan oleh warga.";
 
@@ -309,7 +339,7 @@ public class ReportIncidentPanel extends JPanel {
             fullLoc, (IncidentSeverity) cbSeverity.getSelectedItem(),
             desc, (int) spVictims.getValue(),
             ((Number) spArea.getValue()).intValue(),
-            sliderIntensity.getValue(), user);
+            5, user);   // intensitas default 5; admin bisa asesmen
 
         if (err != null) {
             lblResult.setForeground(UITheme.DANGER);
@@ -317,7 +347,14 @@ public class ReportIncidentPanel extends JPanel {
             return;
         }
 
-        showNotification(mapX + " , " + mapY);
+        // Simpan info bangunan ke incident terakhir
+        Incident last = Database.getLastIncident();
+        if (last != null) {
+            last.setBuildingCategory((BuildingCategory) cbBuildingCat.getSelectedItem());
+            last.setBuildingSubType((String) cbBuildingSubType.getSelectedItem());
+        }
+
+        showNotification(String.format("%.5f, %.5f", mapLat, mapLon));
         lblResult.setForeground(UITheme.SUCCESS);
         lblResult.setText("✓ Laporan terkirim!");
         reset();
@@ -374,14 +411,16 @@ public class ReportIncidentPanel extends JPanel {
     public void reset() {
         tfMapCoord.setText("Klik peta untuk pilih titik...");
         tfMapCoord.setForeground(UITheme.TEXT_SECONDARY);
+        tfAddress.setText("Klik peta untuk deteksi alamat...");
+        tfAddress.setForeground(UITheme.TEXT_SECONDARY);
         taDesc.setText("");
         cbSeverity.setSelectedIndex(0);
+        cbBuildingCat.setSelectedIndex(0);
+        cbBuildingSubType.setModel(new DefaultComboBoxModel<>(BuildingCategory.HUNIAN.getSubTypes()));
         spVictims.setValue(0);
         spArea.setValue(50);
-        sliderIntensity.setValue(5);
-        lblIntensityValue.setText(INTENSITY_LABELS[5]);
         lblResult.setText(" ");
-        mapX = -1; mapY = -1;
+        mapLat = Double.NaN; mapLon = Double.NaN;
         if (mapPanel != null) mapPanel.clearSelection();
     }
 
@@ -398,7 +437,7 @@ public class ReportIncidentPanel extends JPanel {
 
     private JLabel fLbl(String t) {
         JLabel l = new JLabel(t);
-        l.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        l.setFont(new Font(UITheme.FONT_FAMILY, Font.PLAIN, 11));
         l.setForeground(UITheme.TEXT_SECONDARY);
         return l;
     }
@@ -406,9 +445,9 @@ public class ReportIncidentPanel extends JPanel {
     private JTextField tf() {
         JTextField f = new JTextField();
         f.setFont(UITheme.FONT_BODY);
-        f.setBackground(new Color(30, 35, 50));
+        f.setBackground(UITheme.BG_DARK);
         f.setForeground(UITheme.TEXT_PRIMARY);
-        f.setCaretColor(UITheme.ACCENT_ORANGE);
+        f.setCaretColor(UITheme.ACCENT);
         f.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(UITheme.BORDER, 1, true),
             BorderFactory.createEmptyBorder(5, 8, 5, 8)));
@@ -418,9 +457,9 @@ public class ReportIncidentPanel extends JPanel {
     private JTextArea ta(int rows) {
         JTextArea a = new JTextArea(rows, 0);
         a.setFont(UITheme.FONT_BODY);
-        a.setBackground(new Color(30, 35, 50));
+        a.setBackground(UITheme.BG_DARK);
         a.setForeground(UITheme.TEXT_PRIMARY);
-        a.setCaretColor(UITheme.ACCENT_ORANGE);
+        a.setCaretColor(UITheme.ACCENT);
         a.setLineWrap(true);
         a.setWrapStyleWord(true);
         a.setBorder(BorderFactory.createCompoundBorder(
@@ -434,5 +473,106 @@ public class ReportIncidentPanel extends JPanel {
         s.setFont(UITheme.FONT_BODY);
         ((JSpinner.DefaultEditor) s.getEditor()).getTextField().setForeground(UITheme.TEXT_PRIMARY);
         return s;
+    }
+
+    private void reverseGeocode(double lat, double lon) {
+        tfAddress.setText("Mencari alamat...");
+        tfAddress.setForeground(UITheme.TEXT_SECONDARY);
+
+        new Thread(() -> {
+            try {
+                String urlStr = String.format(
+                    "https://nominatim.openstreetmap.org/reverse?lat=%.7f&lon=%.7f&format=json&addressdetails=1",
+                    lat, lon
+                );
+                java.net.URL url = new java.net.URL(urlStr);
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("User-Agent", "SiagaKebakaran/1.0 (fire-reporting-app)");
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+
+                int respCode = conn.getResponseCode();
+                if (respCode == 200) {
+                    java.io.BufferedReader in = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(conn.getInputStream(), "UTF-8")
+                    );
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = in.readLine()) != null) {
+                        response.append(line);
+                    }
+                    in.close();
+
+                    String displayName = extractJsonString(response.toString(), "display_name");
+                    if (displayName != null && !displayName.trim().isEmpty()) {
+                        final String finalAddr = displayName.trim();
+                        SwingUtilities.invokeLater(() -> {
+                            tfAddress.setText(finalAddr);
+                            tfAddress.setForeground(UITheme.TEXT_PRIMARY);
+                        });
+                    } else {
+                        SwingUtilities.invokeLater(() -> {
+                            tfAddress.setText("Alamat tidak ditemukan");
+                            tfAddress.setForeground(UITheme.TEXT_SECONDARY);
+                        });
+                    }
+                } else {
+                    SwingUtilities.invokeLater(() -> {
+                        tfAddress.setText("Gagal mendapatkan alamat (HTTP " + respCode + ")");
+                        tfAddress.setForeground(UITheme.DANGER);
+                    });
+                }
+            } catch (Exception e) {
+                SwingUtilities.invokeLater(() -> {
+                    tfAddress.setText("Gagal mendapatkan alamat");
+                    tfAddress.setForeground(UITheme.DANGER);
+                });
+            }
+        }, "ReverseGeocodeThread").start();
+    }
+
+    private String extractJsonString(String json, String key) {
+        String search = "\"" + key + "\":\"";
+        int start = json.indexOf(search);
+        if (start == -1) return null;
+        start += search.length();
+
+        StringBuilder sb = new StringBuilder();
+        boolean escaped = false;
+        for (int i = start; i < json.length(); i++) {
+            char c = json.charAt(i);
+            if (escaped) {
+                if (c == 'u') {
+                    if (i + 4 < json.length()) {
+                        try {
+                            int code = Integer.parseInt(json.substring(i + 1, i + 5), 16);
+                            sb.append((char) code);
+                            i += 4;
+                        } catch (NumberFormatException e) {
+                            sb.append("\\u");
+                        }
+                    } else {
+                        sb.append("\\u");
+                    }
+                } else if (c == 'n') {
+                    sb.append('\n');
+                } else if (c == 't') {
+                    sb.append('\t');
+                } else if (c == 'r') {
+                    sb.append('\r');
+                } else {
+                    sb.append(c);
+                }
+                escaped = false;
+            } else if (c == '\\') {
+                escaped = true;
+            } else if (c == '"') {
+                break;
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 }

@@ -6,6 +6,7 @@ public class Admin extends Account {
     private String phoneNumber;
     private String adminID;
     private String rank;
+    private FireStation assignedStation;
 
     public Admin(String name, String email, String username, String password, String phoneNumber, String adminID, String rank) {
         super(username, password);
@@ -71,5 +72,13 @@ public class Admin extends Account {
 
     public String getRank() {
         return rank;
+    }
+
+    public FireStation getAssignedStation() {
+        return assignedStation;
+    }
+
+    public void setAssignedStation(FireStation station) {
+        this.assignedStation = station;
     }
 }

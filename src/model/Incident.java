@@ -33,6 +33,14 @@ public class Incident implements Comparable<Incident> {
     private ArrayList<Civilian> affectedCivilians;
     private int            trucksAssigned;
 
+    // ── Bangunan — diisi warga saat lapor ─────────────────────────────────────
+    private BuildingCategory buildingCategory;  // kategori fungsi bangunan
+    private String           buildingSubType;   // subtipe spesifik
+
+    // ── Detail — diisi admin setelah menerima laporan ─────────────────────────
+    private BuildingMaterial buildingMaterial;  // material dominan
+    private DamageLevel      damageLevel;       // tingkat kerusakan
+
     // ── Duration & Progress fields ────────────────────────────────────────────
     private LocalDateTime  dispatchStartTime;   // when first truck was sent
     private int            dispatchProgress;    // 0–100 %, simulated handling progress
@@ -51,6 +59,10 @@ public class Incident implements Comparable<Incident> {
         this.trucksAssigned = 0;
         this.dispatchProgress = 0;
         this.dispatchStartTime = null;
+        this.buildingCategory = null;
+        this.buildingSubType  = null;
+        this.buildingMaterial = null;
+        this.damageLevel      = null;
     }
 
     public void addCivilian(Civilian c) {
@@ -134,4 +146,25 @@ public class Incident implements Comparable<Incident> {
     public LocalDateTime   getDispatchStartTime()   { return dispatchStartTime; }
     // backward-compat alias
     public LocalDateTime   getReportedAt()          { return fire_start_time; }
+
+    // ── Building info getters/setters ─────────────────────────────────────────
+    public BuildingCategory getBuildingCategory()              { return buildingCategory; }
+    public void             setBuildingCategory(BuildingCategory c) { this.buildingCategory = c; }
+    public String           getBuildingSubType()               { return buildingSubType; }
+    public void             setBuildingSubType(String s)       { this.buildingSubType = s; }
+    public BuildingMaterial getBuildingMaterial()              { return buildingMaterial; }
+    public void             setBuildingMaterial(BuildingMaterial m) { this.buildingMaterial = m; }
+    public DamageLevel      getDamageLevel()                   { return damageLevel; }
+    public void             setDamageLevel(DamageLevel d)      { this.damageLevel = d; }
+
+    /**
+     * Label ringkas untuk ditampilkan: "Ruko (Komersial)"
+     * atau kategori saja jika subtipe belum diisi.
+     */
+    public String getBuildingLabel() {
+        if (buildingCategory == null) return "Tidak diketahui";
+        if (buildingSubType  == null || buildingSubType.isBlank())
+            return buildingCategory.getLabel();
+        return buildingSubType + " (" + buildingCategory.getLabel() + ")";
+    }
 }

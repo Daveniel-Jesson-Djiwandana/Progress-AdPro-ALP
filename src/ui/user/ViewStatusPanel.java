@@ -21,7 +21,7 @@ public class ViewStatusPanel extends JPanel {
     private Timer autoRefreshTimer;
 
     private static final String[] COLS = {
-        "ID", "Lokasi", "Tingkat", "Intensitas", "Korban", "Progress", "Status", "Dilaporkan"
+        "ID", "Lokasi", "Tingkat", "Bangunan", "Korban", "Progress", "Status", "Dilaporkan"
     };
 
     public ViewStatusPanel() {
@@ -69,15 +69,15 @@ public class ViewStatusPanel extends JPanel {
 
         // Info banner
         JPanel infoBanner = new JPanel(new BorderLayout());
-        infoBanner.setBackground(new Color(30, 58, 138, 60));
+        infoBanner.setBackground(UITheme.BG_CARD);
         infoBanner.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(UITheme.INFO, 1, true),
+            BorderFactory.createLineBorder(UITheme.BORDER, 1, true),
             BorderFactory.createEmptyBorder(8, 12, 8, 12)));
         JLabel infoText = new JLabel(
             "<html>ℹ  Halaman ini menampilkan status semua laporan kebakaran aktif. " +
             "Status diperbarui secara real-time oleh petugas pemadam kebakaran.</html>");
         infoText.setFont(UITheme.FONT_SMALL);
-        infoText.setForeground(UITheme.INFO);
+        infoText.setForeground(UITheme.TEXT_SECONDARY);
         infoBanner.add(infoText);
 
         tableModel = new DefaultTableModel(COLS, 0) {
@@ -92,11 +92,9 @@ public class ViewStatusPanel extends JPanel {
         table.setBackground(UITheme.BG_SURFACE);
         table.setForeground(UITheme.TEXT_PRIMARY);
         table.setGridColor(UITheme.BORDER);
-        table.setSelectionBackground(new Color(30, 58, 138, 80));
+        table.setSelectionBackground(UITheme.ACCENT);
         table.setShowVerticalLines(false);
-        table.getTableHeader().setFont(UITheme.FONT_SUB);
-        table.getTableHeader().setBackground(UITheme.BG_CARD);
-        table.getTableHeader().setForeground(UITheme.ACCENT_ORANGE);
+        UITheme.styleTableHeader(table, UITheme.FONT_SUB);
 
         // Severity renderer
         table.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer() {
@@ -121,7 +119,8 @@ public class ViewStatusPanel extends JPanel {
                 bar.setValue(pct);
                 bar.setString(pct + "%");
                 bar.setForeground(pct >= 80 ? UITheme.SUCCESS :
-                                  pct >= 40 ? UITheme.ACCENT_ORANGE : UITheme.INFO);
+                                  pct >= 40 ? UITheme.ACCENT :
+                                              UITheme.INFO);
                 bar.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
                 return bar;
             }
@@ -167,7 +166,7 @@ public class ViewStatusPanel extends JPanel {
                     inc.getIncidentId(),
                     truncate(inc.getLocation(), 28),
                     inc.getSeverity(),
-                    inc.getFireIntensity() + "/10",
+                    inc.getBuildingLabel(),
                     inc.getNumVictimsTrapped() + " org",
                     inc.getDispatchProgress(),
                     inc.getStatus(),

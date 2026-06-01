@@ -84,11 +84,9 @@ public class UserHistoryPanel extends JPanel {
         table.setBackground(UITheme.BG_SURFACE);
         table.setForeground(UITheme.TEXT_PRIMARY);
         table.setGridColor(UITheme.BORDER);
-        table.setSelectionBackground(new Color(30, 58, 138, 80));
+        table.setSelectionBackground(UITheme.ACCENT);
         table.setShowVerticalLines(false);
-        table.getTableHeader().setFont(UITheme.FONT_SUB);
-        table.getTableHeader().setBackground(UITheme.BG_CARD);
-        table.getTableHeader().setForeground(UITheme.ACCENT_ORANGE);
+        UITheme.styleTableHeader(table, UITheme.FONT_SUB);
 
         table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) showDetail(table.getSelectedRow());

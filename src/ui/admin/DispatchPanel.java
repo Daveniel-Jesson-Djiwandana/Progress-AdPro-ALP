@@ -10,14 +10,14 @@ import ui.components.VectorIcon;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.PriorityQueue;
+import java.util.*;
 import java.util.regex.*;
 
 /**
@@ -31,6 +31,8 @@ public class DispatchPanel extends JPanel {
     private JTable            table;
     private JLabel            lblCount;
     private JLabel            lblTrucks;
+    private JToggleButton     btnInRadius;
+    private JToggleButton     btnAllIncidents;
 
     private JSpinner   spTrucks;
     private JTextField tfNotes;
@@ -38,6 +40,11 @@ public class DispatchPanel extends JPanel {
     private JPanel    detailOverlay;
     private JTextArea taDetail;
     private JLabel    lblDetailTitle;
+
+    // Admin building-detail fields
+    private JComboBox<BuildingMaterial> cbMaterial;
+    private JComboBox<DamageLevel>      cbDamage;
+    private JLabel                      lblBuildingInfo;
 
     private IncidentMapPanel mapPanel;
 
@@ -100,11 +107,11 @@ public class DispatchPanel extends JPanel {
 
     private JPanel buildMapZoomBar() {
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 2));
-        bar.setBackground(new Color(10, 14, 22, 200));
+        bar.setBackground(UITheme.BG_CARD);
         bar.setBorder(BorderFactory.createLineBorder(UITheme.BORDER, 1, true));
 
         JLabel lblZ = new JLabel("100%");
-        lblZ.setFont(new Font("SansSerif", Font.BOLD, 10));
+        lblZ.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 10));
         lblZ.setForeground(UITheme.TEXT_SECONDARY);
 
         JButton btnOut = mkZBtn("−");
@@ -121,7 +128,7 @@ public class DispatchPanel extends JPanel {
 
     private JButton mkZBtn(String txt) {
         JButton b = new JButton(txt);
-        b.setFont(new Font("SansSerif", Font.BOLD, 13));
+        b.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 13));
         b.setForeground(UITheme.TEXT_PRIMARY);
         b.setBackground(UITheme.BG_CARD);
         b.setBorderPainted(false);
@@ -133,7 +140,7 @@ public class DispatchPanel extends JPanel {
     // ── Sidebar ───────────────────────────────────────────────────────────────
     private JPanel buildSidebar() {
         JPanel sidebar = new JPanel(new BorderLayout(0, 0));
-        sidebar.setBackground(new Color(10, 14, 22, 225));
+        sidebar.setBackground(UITheme.BG_DARK);
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UITheme.BORDER));
 
         JPanel header = new JPanel();
@@ -153,6 +160,28 @@ public class DispatchPanel extends JPanel {
         lblTrucks.setFont(UITheme.FONT_SMALL);
         lblTrucks.setForeground(UITheme.SUCCESS);
 
+        btnInRadius = new JToggleButton("Wilayah Saya (≤ 5km)");
+        btnAllIncidents = new JToggleButton("Semua Laporan");
+        btnInRadius.setSelected(true);
+
+        ButtonGroup filterGroup = new ButtonGroup();
+        filterGroup.add(btnInRadius);
+        filterGroup.add(btnAllIncidents);
+
+        for (JToggleButton btn : new JToggleButton[]{btnInRadius, btnAllIncidents}) {
+            btn.setFont(UITheme.FONT_SMALL);
+            btn.setForeground(UITheme.TEXT_SECONDARY);
+            btn.setBackground(UITheme.BG_CARD);
+            btn.setFocusPainted(false);
+            btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            btn.addActionListener(e -> refresh());
+        }
+
+        JPanel filterPanel = new JPanel(new GridLayout(1, 2, 4, 0));
+        filterPanel.setOpaque(false);
+        filterPanel.add(btnInRadius);
+        filterPanel.add(btnAllIncidents);
+
         JButton btnRefresh = new JButton("⟳ Perbarui");
         btnRefresh.setFont(UITheme.FONT_SMALL);
         btnRefresh.setForeground(UITheme.ACCENT_ORANGE);
@@ -166,6 +195,8 @@ public class DispatchPanel extends JPanel {
         header.add(Box.createVerticalStrut(3));
         header.add(lblCount);
         header.add(lblTrucks);
+        header.add(Box.createVerticalStrut(8));
+        header.add(filterPanel);
         header.add(Box.createVerticalStrut(6));
         header.add(btnRefresh);
 
@@ -175,17 +206,14 @@ public class DispatchPanel extends JPanel {
         table = new JTable(tableModel);
         table.setFont(UITheme.FONT_SMALL);
         table.setRowHeight(32);
-        table.setBackground(new Color(14, 18, 28, 200));
+        table.setBackground(UITheme.BG_SURFACE);
         table.setForeground(UITheme.TEXT_PRIMARY);
-        table.setGridColor(new Color(39, 39, 42, 120));
-        table.setSelectionBackground(new Color(80, 30, 30));
+        table.setGridColor(UITheme.BORDER);
+        table.setSelectionBackground(UITheme.ACCENT);
         table.setShowVerticalLines(false);
-        table.getTableHeader().setFont(UITheme.FONT_SMALL);
-        table.getTableHeader().setBackground(new Color(20, 24, 36));
-        table.getTableHeader().setForeground(UITheme.ACCENT_ORANGE);
+        UITheme.styleTableHeader(table, UITheme.FONT_SMALL);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setOpaque(false);
-        table.getTableHeader().setOpaque(false);
 
         // renderer priority (#) — nomor urut prioritas, BUKAN id counter
         table.getColumnModel().getColumn(0).setMaxWidth(36);
@@ -196,7 +224,7 @@ public class DispatchPanel extends JPanel {
                 setHorizontalAlignment(CENTER);
                 setText(row == 0 ? "🔴" : "P" + (row+1));
                 setForeground(row == 0 ? UITheme.DANGER : UITheme.TEXT_SECONDARY);
-                setBackground(s ? new Color(80,30,30) : new Color(0,0,0,0));
+                setBackground(s ? UITheme.ACCENT : UITheme.BG_SURFACE);
                 setOpaque(true);
                 return this;
             }
@@ -300,7 +328,7 @@ public class DispatchPanel extends JPanel {
     // ── Detail Overlay ────────────────────────────────────────────────────────
     private JPanel buildDetailOverlay() {
         JPanel panel = new JPanel(new BorderLayout(0, 0));
-        panel.setBackground(new Color(10, 14, 22, 235));
+        panel.setBackground(UITheme.BG_DARK);
         panel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(UITheme.BORDER, 1, true),
             BorderFactory.createEmptyBorder(0, 0, 0, 0)));
@@ -310,11 +338,10 @@ public class DispatchPanel extends JPanel {
         lblDetailTitle.setForeground(UITheme.ACCENT_ORANGE);
         lblDetailTitle.setBorder(new EmptyBorder(12, 14, 8, 14));
 
-        // Tombol tutup — dengan ActionListener yang benar
         JButton btnClose = new JButton("✕  Tutup");
         btnClose.setFont(UITheme.FONT_SMALL);
         btnClose.setForeground(UITheme.TEXT_SECONDARY);
-        btnClose.setBackground(new Color(40, 20, 20));
+        btnClose.setBackground(UITheme.BG_CARD);
         btnClose.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(UITheme.BORDER, 1),
             BorderFactory.createEmptyBorder(4, 10, 4, 10)));
@@ -329,13 +356,14 @@ public class DispatchPanel extends JPanel {
         detailHeader.add(lblDetailTitle, BorderLayout.WEST);
         detailHeader.add(btnClose,       BorderLayout.EAST);
 
+        // ── Teks detail insiden (read-only) ────────────────────────────────────
         taDetail = new JTextArea();
         taDetail.setFont(UITheme.FONT_MONO);
         taDetail.setBackground(new Color(0, 0, 0, 0));
         taDetail.setForeground(UITheme.TEXT_PRIMARY);
         taDetail.setEditable(false);
         taDetail.setOpaque(false);
-        taDetail.setBorder(new EmptyBorder(10, 14, 10, 14));
+        taDetail.setBorder(new EmptyBorder(10, 14, 6, 14));
 
         JScrollPane detailScroll = new JScrollPane(taDetail);
         detailScroll.setOpaque(false);
@@ -343,8 +371,96 @@ public class DispatchPanel extends JPanel {
         detailScroll.setBorder(null);
         detailScroll.getVerticalScrollBar().setUnitIncrement(10);
 
-        panel.add(detailHeader,  BorderLayout.NORTH);
-        panel.add(detailScroll,  BorderLayout.CENTER);
+        // ── Info bangunan dari pelapor ──────────────────────────────────────
+        lblBuildingInfo = new JLabel("—");
+        lblBuildingInfo.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 12));
+        lblBuildingInfo.setForeground(UITheme.ACCENT_ORANGE);
+        lblBuildingInfo.setBorder(new EmptyBorder(0, 14, 4, 14));
+
+        // ── Form detail admin ──────────────────────────────────────────────
+        JPanel adminForm = new JPanel();
+        adminForm.setOpaque(false);
+        adminForm.setLayout(new BoxLayout(adminForm, BoxLayout.Y_AXIS));
+        adminForm.setBorder(new EmptyBorder(6, 14, 14, 14));
+
+        // Separator
+        JLabel sep = new JLabel("───  Detail Bangunan (diisi Admin)  ───");
+        sep.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 10));
+        sep.setForeground(UITheme.ACCENT_ORANGE);
+        sep.setAlignmentX(LEFT_ALIGNMENT);
+        adminForm.add(sep);
+        adminForm.add(Box.createVerticalStrut(8));
+
+        // Material dominan
+        adminForm.add(adminLbl("🧱 Material Dominan:"));
+        adminForm.add(Box.createVerticalStrut(3));
+        cbMaterial = new JComboBox<>(BuildingMaterial.values());
+        cbMaterial.setBackground(UITheme.BG_CARD);
+        cbMaterial.setForeground(UITheme.TEXT_PRIMARY);
+        cbMaterial.setFont(UITheme.FONT_SMALL);
+        cbMaterial.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        cbMaterial.setAlignmentX(LEFT_ALIGNMENT);
+        cbMaterial.setRenderer(new DefaultListCellRenderer() {
+            @Override public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f) {
+                super.getListCellRendererComponent(l, v, i, s, f);
+                if (v instanceof BuildingMaterial) {
+                    BuildingMaterial m = (BuildingMaterial) v;
+                    setText(m.getLabel() + " — " + m.getNote());
+                }
+                setBackground(s ? UITheme.ACCENT : UITheme.BG_CARD);
+                setForeground(UITheme.TEXT_PRIMARY);
+                return this;
+            }
+        });
+        adminForm.add(cbMaterial);
+        adminForm.add(Box.createVerticalStrut(10));
+
+        // Tingkat kerusakan
+        adminForm.add(adminLbl("💥 Tingkat Kerusakan:"));
+        adminForm.add(Box.createVerticalStrut(3));
+        cbDamage = new JComboBox<>(DamageLevel.values());
+        cbDamage.setBackground(UITheme.BG_CARD);
+        cbDamage.setForeground(UITheme.TEXT_PRIMARY);
+        cbDamage.setFont(UITheme.FONT_SMALL);
+        cbDamage.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        cbDamage.setAlignmentX(LEFT_ALIGNMENT);
+        cbDamage.setRenderer(new DefaultListCellRenderer() {
+            @Override public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f) {
+                super.getListCellRendererComponent(l, v, i, s, f);
+                if (v instanceof DamageLevel) {
+                    DamageLevel d = (DamageLevel) v;
+                    setText(d.getLabel() + " — " + d.getDescription());
+                    setForeground(UITheme.TEXT_PRIMARY);
+                }
+                setBackground(s ? UITheme.ACCENT : UITheme.BG_CARD);
+                return this;
+            }
+        });
+        adminForm.add(cbDamage);
+        adminForm.add(Box.createVerticalStrut(10));
+
+        // Tombol simpan
+        RoundedButton btnSave = new RoundedButton("  Simpan Detail Bangunan", UITheme.ACCENT_ORANGE);
+        btnSave.setFont(UITheme.FONT_SMALL);
+        btnSave.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        btnSave.setAlignmentX(LEFT_ALIGNMENT);
+        btnSave.addActionListener(e -> saveAdminBuildingDetail());
+        adminForm.add(btnSave);
+
+        JPanel centerPanel = new JPanel(new BorderLayout(0, 4));
+        centerPanel.setOpaque(false);
+        centerPanel.add(detailScroll,   BorderLayout.CENTER);
+        centerPanel.add(lblBuildingInfo, BorderLayout.NORTH);
+
+        JScrollPane adminScroll = new JScrollPane(adminForm);
+        adminScroll.setOpaque(false);
+        adminScroll.getViewport().setOpaque(false);
+        adminScroll.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, UITheme.BORDER));
+        adminScroll.setPreferredSize(new Dimension(0, 220));
+
+        panel.add(detailHeader, BorderLayout.NORTH);
+        panel.add(centerPanel,  BorderLayout.CENTER);
+        panel.add(adminScroll,  BorderLayout.SOUTH);
 
         return panel;
     }
@@ -369,10 +485,17 @@ public class DispatchPanel extends JPanel {
 
         ArrayList<Incident> sorted = getSortedIncidents();
         tableModel.setRowCount(0);
+        FireStation adminStation = Database.getCurrentAdminStation();
+
         for (Incident inc : sorted) {
+            String prefix = "";
+            if (adminStation != null) {
+                double dist = getDijkstraDistance(adminStation, inc);
+                prefix = (dist <= 5.0) ? "📍 " : "🌐 ";
+            }
             tableModel.addRow(new Object[]{
                 "",
-                inc.getIncidentId(),
+                prefix + inc.getIncidentId(),
                 truncate(inc.getLocation(), 18),
                 inc.getSeverity(),
                 inc.getFireIntensity() + "/10",
@@ -382,8 +505,8 @@ public class DispatchPanel extends JPanel {
             });
         }
 
-        int available = Database.getFireStation().getAvailableTruckCount();
-        int total     = Database.getFireStation().getFiretrucks().size();
+        int available = Database.getFireStation() != null ? Database.getFireStation().getAvailableTruckCount() : 0;
+        int total     = Database.getFireStation() != null ? Database.getFireStation().getFiretrucks().size() : 0;
         lblCount.setText(sorted.size() + " insiden dalam antrian");
         lblTrucks.setText("Truk tersedia: " + available + " / " + total);
 
@@ -417,6 +540,46 @@ public class DispatchPanel extends JPanel {
         sb.append(String.format("%-13s: %s\n",  "Deskripsi",   inc.getDescription()));
         sb.append(String.format("%-13s: %d%%  (%d truk)\n",    "Progress", inc.getDispatchProgress(), inc.getTrucksAssigned()));
 
+        // Dijkstra calculations to show pos terdekat
+        double[] coords = FireStationGraph.parseGpsCoord(inc.getLocation());
+        if (coords != null) {
+            FireStationGraph graph = Database.getRoadNetwork();
+            FireStationGraph.Node incidentNode = new FireStationGraph.Node("TempDetailNode", coords[0], coords[1]);
+            graph.addNode(incidentNode);
+            FireStationGraph.Node closestNode = graph.findClosestNode(coords[0], coords[1]);
+            if (closestNode != null) {
+                graph.addEdge("TempDetailNode", closestNode.id);
+            }
+            Map<FireStationGraph.Node, Double> dists = graph.dijkstra(incidentNode);
+            
+            FireStation closestStation = null;
+            double minDist = Double.MAX_VALUE;
+            double distToAdmin = Double.MAX_VALUE;
+            FireStation adminStation = Database.getCurrentAdminStation();
+
+            for (FireStation station : Database.getFireStations()) {
+                FireStationGraph.Node sNode = new FireStationGraph.Node(station.getName(), station.getLatitude(), station.getLongitude());
+                Double d = dists.get(sNode);
+                if (d != null) {
+                    if (d < minDist) {
+                        minDist = d;
+                        closestStation = station;
+                    }
+                    if (adminStation != null && station.getName().equals(adminStation.getName())) {
+                        distToAdmin = d;
+                    }
+                }
+            }
+            graph.removeNode(incidentNode);
+
+            if (closestStation != null) {
+                sb.append(String.format("%-13s: %s (%.2f km)\n", "Pos Terdekat", closestStation.getName(), minDist));
+            }
+            if (adminStation != null && distToAdmin < Double.MAX_VALUE) {
+                sb.append(String.format("%-13s: %.2f km (%s)\n", "Jarak dari Pos", distToAdmin, (distToAdmin <= 5.0 ? "Dalam Radius" : "Luar Radius")));
+            }
+        }
+
         if (!inc.getAffectedCivilians().isEmpty()) {
             sb.append("\nKorban Terdampak:\n");
             for (Civilian c : inc.getAffectedCivilians())
@@ -425,6 +588,21 @@ public class DispatchPanel extends JPanel {
 
         taDetail.setText(sb.toString());
         taDetail.setCaretPosition(0);
+
+        // ── Tampilkan info bangunan dari pelapor ────────────────────────────
+        String bldg = inc.getBuildingLabel();
+        if (inc.getBuildingCategory() != null) {
+            lblBuildingInfo.setText("🏠 Objek: " + bldg);
+        } else {
+            lblBuildingInfo.setText("🏠 Objek terbakar: belum diisi pelapor");
+        }
+
+        // Pre-fill admin form dari data yang sudah tersimpan (jika ada)
+        if (inc.getBuildingMaterial() != null) cbMaterial.setSelectedItem(inc.getBuildingMaterial());
+        else cbMaterial.setSelectedIndex(0);
+        if (inc.getDamageLevel() != null) cbDamage.setSelectedItem(inc.getDamageLevel());
+        else cbDamage.setSelectedIndex(0);
+
         detailOverlay.setVisible(true);
     }
 
@@ -434,24 +612,93 @@ public class DispatchPanel extends JPanel {
         if (inc == null) { warn("Pilih insiden terlebih dahulu."); return; }
         if (inc.getStatus() == IncidentStatus.RESOLVED) { info("Insiden ini sudah selesai."); return; }
 
-        int available = Database.getFireStation().getAvailableTruckCount();
-        if (available == 0) { warn("Tidak ada kendaraan yang tersedia."); return; }
+        int count = (int) spTrucks.getValue();
+        int remaining = count;
 
-        int count  = (int) spTrucks.getValue();
-        int actual = Math.min(count, available);
+        FireStation ownStation = Database.getFireStation();
+        int ownAvailable = ownStation != null ? ownStation.getAvailableTruckCount() : 0;
+        int ownDispatch = Math.min(remaining, ownAvailable);
+
+        if (ownStation != null) {
+            ArrayList<Firetruck> ownTrucks = ownStation.getAvailableTrucks();
+            for (int i = 0; i < ownDispatch; i++) {
+                ownTrucks.get(i).setStatus(TruckStatus.DEPLOYED);
+            }
+        }
+        remaining -= ownDispatch;
+
+        int backupDispatchCount = 0;
+        StringBuilder backupInfo = new StringBuilder();
+
+        if (remaining > 0) {
+            double[] coords = FireStationGraph.parseGpsCoord(inc.getLocation());
+            ArrayList<StationDistance> assistanceList = new ArrayList<>();
+
+            if (coords != null) {
+                FireStationGraph graph = Database.getRoadNetwork();
+                FireStationGraph.Node incidentNode = new FireStationGraph.Node("TempIncident", coords[0], coords[1]);
+                graph.addNode(incidentNode);
+                FireStationGraph.Node closestNode = graph.findClosestNode(coords[0], coords[1]);
+                if (closestNode != null) {
+                    graph.addEdge("TempIncident", closestNode.id);
+                }
+
+                Map<FireStationGraph.Node, Double> dists = graph.dijkstra(incidentNode);
+
+                for (FireStation station : Database.getFireStations()) {
+                    if (ownStation != null && station.getName().equals(ownStation.getName())) continue;
+                    FireStationGraph.Node sNode = new FireStationGraph.Node(station.getName(), station.getLatitude(), station.getLongitude());
+                    Double d = dists.get(sNode);
+                    if (d != null && station.getAvailableTruckCount() > 0) {
+                        assistanceList.add(new StationDistance(station, d));
+                    }
+                }
+                graph.removeNode(incidentNode);
+            } else {
+                for (FireStation station : Database.getFireStations()) {
+                    if (ownStation != null && station.getName().equals(ownStation.getName())) continue;
+                    if (station.getAvailableTruckCount() > 0) {
+                        assistanceList.add(new StationDistance(station, 0.0));
+                    }
+                }
+            }
+
+            Collections.sort(assistanceList, Comparator.comparingDouble(ad -> ad.distance));
+
+            for (StationDistance sd : assistanceList) {
+                if (remaining <= 0) break;
+                int avail = sd.station.getAvailableTruckCount();
+                int take = Math.min(remaining, avail);
+
+                ArrayList<Firetruck> assistTrucks = sd.station.getAvailableTrucks();
+                for (int i = 0; i < take; i++) {
+                    assistTrucks.get(i).setStatus(TruckStatus.DEPLOYED);
+                }
+
+                backupDispatchCount += take;
+                backupInfo.append(String.format("<br>- <b>%d truk</b> dari %s (jarak: %.2f km)", take, sd.station.getName(), sd.distance));
+                remaining -= take;
+            }
+        }
+
+        int actualTotalDispatched = count - remaining;
+        if (actualTotalDispatched == 0) {
+            warn("Tidak ada kendaraan pemadam kebakaran yang tersedia di pos Anda maupun pos bantuan lainnya.");
+            return;
+        }
+
         inc.setStatus(IncidentStatus.DISPATCHED);
-        inc.setTrucksAssigned(inc.getTrucksAssigned() + actual);
+        inc.setTrucksAssigned(inc.getTrucksAssigned() + actualTotalDispatched);
         inc.startDispatch();
 
-        ArrayList<Firetruck> trucks = Database.getFireStation().getAvailableTrucks();
-        for (int i = 0; i < Math.min(actual, trucks.size()); i++)
-            trucks.get(i).setStatus(TruckStatus.DEPLOYED);
-
         String admin = adminName();
-        JOptionPane.showMessageDialog(this,
-            "<html><b>" + actual + " kendaraan</b> dikirim ke:<br>" +
-            inc.getLocation() + "<br>Insiden: " + inc.getIncidentId() + "<br>Oleh: " + admin + "</html>",
-            "Kendaraan Dikirim ✓", JOptionPane.INFORMATION_MESSAGE);
+        String msg = "<html><b>" + ownDispatch + " kendaraan</b> dikirim dari pos Anda (" + (ownStation != null ? ownStation.getName() : "—") + ").";
+        if (backupDispatchCount > 0) {
+            msg += "<br>Bantuan terkirim:" + backupInfo.toString();
+        }
+        msg += "<br><br>Lokasi: " + inc.getLocation() + "<br>Insiden: " + inc.getIncidentId() + "<br>Oleh: " + admin + "</html>";
+
+        JOptionPane.showMessageDialog(this, msg, "Kendaraan Dikirim ✓", JOptionPane.INFORMATION_MESSAGE);
         refresh();
     }
 
@@ -465,14 +712,19 @@ public class DispatchPanel extends JPanel {
         int trucksUsed = (int) spTrucks.getValue();
 
         int toFree = inc.getTrucksAssigned();
-        ArrayList<Firetruck> deployed = new ArrayList<>();
-        for (Firetruck t : Database.getFireStation().getFiretrucks())
-            if (t.getStatus() == TruckStatus.DEPLOYED) deployed.add(t);
-        for (int i = 0; i < Math.min(toFree, deployed.size()); i++)
-            deployed.get(i).setStatus(TruckStatus.AVAILABLE);
+        int freedCount = 0;
+        for (FireStation station : Database.getFireStations()) {
+            for (Firetruck t : station.getFiretrucks()) {
+                if (t.getStatus() == TruckStatus.DEPLOYED && freedCount < toFree) {
+                    t.setStatus(TruckStatus.AVAILABLE);
+                    freedCount++;
+                }
+            }
+        }
 
         IncidentService.resolveIncident(inc, adminName(), Math.max(trucksUsed, inc.getTrucksAssigned()), notes);
         closeDetail();
+        refresh();
         JOptionPane.showMessageDialog(this,
             "<html><b>Insiden " + inc.getIncidentId() + " selesai!</b><br>" +
             "Lokasi: " + inc.getLocation() + "</html>",
@@ -505,8 +757,38 @@ public class DispatchPanel extends JPanel {
         return null;
     }
 
+    private double getDijkstraDistance(FireStation station, Incident inc) {
+        double[] coords = FireStationGraph.parseGpsCoord(inc.getLocation());
+        if (coords == null) return Double.MAX_VALUE;
+
+        FireStationGraph graph = Database.getRoadNetwork();
+        FireStationGraph.Node incidentNode = new FireStationGraph.Node("TempDistNode", coords[0], coords[1]);
+        graph.addNode(incidentNode);
+
+        FireStationGraph.Node closestNode = graph.findClosestNode(coords[0], coords[1]);
+        if (closestNode != null) {
+            graph.addEdge("TempDistNode", closestNode.id);
+        }
+
+        Map<FireStationGraph.Node, Double> dists = graph.dijkstra(incidentNode);
+        FireStationGraph.Node sNode = new FireStationGraph.Node(station.getName(), station.getLatitude(), station.getLongitude());
+        Double d = dists.get(sNode);
+
+        graph.removeNode(incidentNode);
+        return d != null ? d : Double.MAX_VALUE;
+    }
+
     private String adminName() {
         return Database.getCurrentUser() != null ? Database.getCurrentUser().getName() : "Admin";
+    }
+
+    private static class StationDistance {
+        FireStation station;
+        double distance;
+        StationDistance(FireStation s, double d) {
+            this.station = s;
+            this.distance = d;
+        }
     }
     private void warn(String msg) { JOptionPane.showMessageDialog(this, msg, "Peringatan", JOptionPane.WARNING_MESSAGE); }
     private void info(String msg) { JOptionPane.showMessageDialog(this, msg, "Info",       JOptionPane.INFORMATION_MESSAGE); }
@@ -514,6 +796,24 @@ public class DispatchPanel extends JPanel {
     private JLabel sLbl(String t) {
         JLabel l = new JLabel(t); l.setFont(UITheme.FONT_SMALL); l.setForeground(UITheme.TEXT_SECONDARY);
         l.setAlignmentX(LEFT_ALIGNMENT); return l;
+    }
+    private JLabel adminLbl(String t) {
+        JLabel l = new JLabel(t); l.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 11));
+        l.setForeground(UITheme.ACCENT_ORANGE); l.setAlignmentX(LEFT_ALIGNMENT); return l;
+    }
+
+    /** Simpan pilihan material & tingkat kerusakan ke incident yang sedang dipilih */
+    private void saveAdminBuildingDetail() {
+        Incident inc = getSelectedIncident();
+        if (inc == null) { warn("Pilih insiden terlebih dahulu."); return; }
+        inc.setBuildingMaterial((BuildingMaterial) cbMaterial.getSelectedItem());
+        inc.setDamageLevel((DamageLevel) cbDamage.getSelectedItem());
+        DamageLevel d = (DamageLevel) cbDamage.getSelectedItem();
+        JOptionPane.showMessageDialog(this,
+            "<html>Detail bangunan disimpan!<br>"
+            + "Material: <b>" + inc.getBuildingMaterial().getLabel() + "</b><br>"
+            + "Kerusakan: <b>" + (d != null ? d.getLabel() : "-") + "</b></html>",
+            "Tersimpan ✓", JOptionPane.INFORMATION_MESSAGE);
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -692,11 +992,11 @@ public class DispatchPanel extends JPanel {
             int w  = getWidth(), h = getHeight();
 
             if (mapImage != null) {
-                // isi background penuh agar tidak ada frame hitam
-                g2.setColor(new Color(18, 22, 32));
+                g2.setColor(Color.BLACK);
                 g2.fillRect(0, 0, Math.max(dw, w), Math.max(dh, h));
                 g2.drawImage(mapImage, 0, 0, dw, dh, null);
-                g2.setColor(new Color(0, 0, 0, 55));
+                // overlay gelap tipis agar marker lebih jelas
+                g2.setColor(new Color(0, 0, 0, 80));
                 g2.fillRect(0, 0, dw, dh);
 
                 for (int i = 0; i < incidents.size(); i++) {
@@ -716,8 +1016,10 @@ public class DispatchPanel extends JPanel {
                     Color col   = severityColor(inc.getSeverity());
 
                     if (sel) {
-                        g2.setColor(new Color(col.getRed(), col.getGreen(), col.getBlue(), 60));
-                        g2.fillOval(sx - 22, sy - 22, 44, 44);
+                        // halo solid di sekitar titik terpilih
+                        g2.setColor(UITheme.ACCENT);
+                        g2.setStroke(new BasicStroke(2f));
+                        g2.drawOval(sx - 18, sy - 18, 36, 36);
                     }
                     int r = sel ? 11 : 8;
                     g2.setColor(col);
@@ -728,7 +1030,7 @@ public class DispatchPanel extends JPanel {
 
                     // nomor prioritas (P1, P2, ...)
                     String lbl = String.valueOf(i + 1);
-                    Font f = new Font("SansSerif", Font.BOLD, sel ? 11 : 9);
+                    Font f = new Font(UITheme.FONT_FAMILY, Font.BOLD, sel ? 11 : 9);
                     g2.setFont(f);
                     FontMetrics fm = g2.getFontMetrics(f);
                     g2.setColor(Color.WHITE);
@@ -737,15 +1039,15 @@ public class DispatchPanel extends JPanel {
                     // tooltip nama lokasi jika dipilih
                     if (sel) {
                         String name = truncate(inc.getLocation().replaceAll("\\[.*?\\]","").trim(), 28);
-                        Font nf = new Font("SansSerif", Font.BOLD, 11);
+                        Font nf = new Font(UITheme.FONT_FAMILY, Font.BOLD, 11);
                         g2.setFont(nf);
                         FontMetrics nfm = g2.getFontMetrics(nf);
                         int lw = nfm.stringWidth(name) + 12, lh = nfm.getHeight() + 5;
                         int lx = Math.max(4, Math.min(sx - lw/2, w - lw - 4));
                         int ly = (sy - r - lh - 4 < 4) ? sy + r + 4 : sy - r - lh - 4;
-                        g2.setColor(new Color(8, 10, 20, 210));
+                        g2.setColor(Color.BLACK);
                         g2.fillRoundRect(lx, ly, lw, lh, 6, 6);
-                        g2.setColor(col);
+                        g2.setColor(UITheme.ACCENT);
                         g2.setStroke(new BasicStroke(1f));
                         g2.drawRoundRect(lx, ly, lw, lh, 6, 6);
                         g2.setColor(Color.WHITE);
@@ -756,10 +1058,10 @@ public class DispatchPanel extends JPanel {
                 drawLegend(g2, dw, dh);
 
             } else {
-                g2.setColor(new Color(40, 50, 65));
+                g2.setColor(Color.BLACK);
                 g2.fillRect(0, 0, dw, dh);
                 g2.setColor(UITheme.TEXT_SECONDARY);
-                g2.setFont(new Font("SansSerif", Font.BOLD, 14));
+                g2.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 14));
                 g2.drawString("citymap.png tidak ditemukan", dw/2 - 100, dh/2);
             }
 
@@ -768,13 +1070,12 @@ public class DispatchPanel extends JPanel {
 
         private void drawLegend(Graphics2D g2, int w, int h) {
             String[] labels = {"Kritis", "Tinggi", "Sedang", "Rendah"};
-            Color[]  cols   = {UITheme.DANGER, UITheme.ACCENT_ORANGE, UITheme.WARNING, UITheme.SUCCESS};
             int lx = w - 80, ly = h - 80;
-            g2.setColor(new Color(0, 0, 0, 160));
+            g2.setColor(Color.BLACK);
             g2.fillRoundRect(lx - 8, ly - 6, 82, labels.length * 18 + 12, 8, 8);
-            g2.setFont(new Font("SansSerif", Font.PLAIN, 10));
+            g2.setFont(new Font(UITheme.FONT_FAMILY, Font.PLAIN, 10));
             for (int i = 0; i < labels.length; i++) {
-                g2.setColor(cols[i]);
+                g2.setColor(UITheme.ACCENT);
                 g2.fillOval(lx, ly + i * 18 + 3, 8, 8);
                 g2.setColor(UITheme.TEXT_SECONDARY);
                 g2.drawString(labels[i], lx + 13, ly + i * 18 + 11);
@@ -782,13 +1083,8 @@ public class DispatchPanel extends JPanel {
         }
 
         private Color severityColor(IncidentSeverity s) {
-            if (s == null) return UITheme.TEXT_SECONDARY;
-            switch (s) {
-                case CRITICAL: return UITheme.DANGER;
-                case HIGH:     return UITheme.ACCENT_ORANGE;
-                case MEDIUM:   return UITheme.WARNING;
-                default:       return UITheme.SUCCESS;
-            }
+            // Semua severity pakai warna aksen; ukuran titik beda berdasar prioritas
+            return UITheme.ACCENT;
         }
     }
 }

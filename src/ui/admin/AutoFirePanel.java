@@ -85,7 +85,7 @@ public class AutoFirePanel extends JPanel {
         lblStatus.setAlignmentX(CENTER_ALIGNMENT);
 
         lblCountdown = new JLabel("--", SwingConstants.CENTER);
-        lblCountdown.setFont(new Font("SansSerif", Font.BOLD, 56));
+        lblCountdown.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 56));
         lblCountdown.setForeground(UITheme.ACCENT_ORANGE);
         lblCountdown.setAlignmentX(CENTER_ALIGNMENT);
 
