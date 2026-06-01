@@ -335,11 +335,22 @@ public class ReportIncidentPanel extends JPanel {
         String desc    = taDesc.getText().trim();
         if (desc.isEmpty()) desc = "Kebakaran dilaporkan oleh warga.";
 
+        IncidentSeverity severity = (IncidentSeverity) cbSeverity.getSelectedItem();
+        int intensity = 5;
+        if (severity != null) {
+            switch (severity) {
+                case LOW:      intensity = 2; break;
+                case MEDIUM:   intensity = 5; break;
+                case HIGH:     intensity = 8; break;
+                case CRITICAL: intensity = 10; break;
+            }
+        }
+
         String err = IncidentService.reportIncident(
-            fullLoc, (IncidentSeverity) cbSeverity.getSelectedItem(),
+            fullLoc, severity,
             desc, (int) spVictims.getValue(),
             ((Number) spArea.getValue()).intValue(),
-            5, user);   // intensitas default 5; admin bisa asesmen
+            intensity, user);
 
         if (err != null) {
             lblResult.setForeground(UITheme.DANGER);

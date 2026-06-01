@@ -27,7 +27,10 @@ C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\ui\admin\AdminDashboard
 C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\ui\admin\AdminHistoryPanel.java
 C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\ui\admin\AdminStatusPanel.java
 C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\ui\admin\AutoFirePanel.java
+C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\ui\admin\CivilianMonitorPanel.java
 C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\ui\admin\DispatchPanel.java
+C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\ui\admin\FiretruckResourcePanel.java
+C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\ui\admin\PriorityRulesPanel.java
 C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\ui\admin\RandomizerPanel.java
 C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\ui\components\RoundedButton.java
 C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\ui\components\RoundedPanel.java

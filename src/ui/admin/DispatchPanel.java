@@ -48,6 +48,7 @@ public class DispatchPanel extends JPanel {
     private JLabel                      lblBuildingInfo;
 
     private OsmCityMapPanel mapPanel;
+    private JLayeredPane layers;
 
     private Timer autoRefreshTimer;
 
@@ -98,7 +99,7 @@ public class DispatchPanel extends JPanel {
         btnToggleSidebar.setFocusPainted(false);
         btnToggleSidebar.setToolTipText("Sembunyikan / Tampilkan panel samping");
 
-        JLayeredPane layers = new JLayeredPane() {
+        layers = new JLayeredPane() {
             @Override public void doLayout() {
                 int w = getWidth(), h = getHeight();
                 mapScroll.setBounds(0, 0, w, h);
@@ -182,9 +183,31 @@ public class DispatchPanel extends JPanel {
         header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
         header.setBorder(new EmptyBorder(16, 16, 8, 16));
 
+        JPanel headerTop = new JPanel(new BorderLayout());
+        headerTop.setOpaque(false);
+
         JLabel title = new JLabel("Dispatch Insiden");
         title.setFont(UITheme.FONT_HEADING);
         title.setForeground(UITheme.TEXT_PRIMARY);
+
+        JButton btnCloseSidebar = new JButton("✕");
+        btnCloseSidebar.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 14));
+        btnCloseSidebar.setForeground(UITheme.TEXT_SECONDARY);
+        btnCloseSidebar.setBackground(new Color(0, 0, 0, 0));
+        btnCloseSidebar.setBorder(BorderFactory.createEmptyBorder(2, 8, 2, 8));
+        btnCloseSidebar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnCloseSidebar.setFocusPainted(false);
+        btnCloseSidebar.setContentAreaFilled(false);
+        btnCloseSidebar.addActionListener(e -> {
+            sidebarVisible = false;
+            if (layers != null) {
+                layers.doLayout();
+                layers.repaint();
+            }
+        });
+
+        headerTop.add(title, BorderLayout.WEST);
+        headerTop.add(btnCloseSidebar, BorderLayout.EAST);
 
         lblCount  = new JLabel("Memuat...");
         lblCount.setFont(UITheme.FONT_SMALL);
@@ -225,7 +248,7 @@ public class DispatchPanel extends JPanel {
         btnRefresh.setAlignmentX(LEFT_ALIGNMENT);
         btnRefresh.addActionListener(e -> refresh());
 
-        header.add(title);
+        header.add(headerTop);
         header.add(Box.createVerticalStrut(3));
         header.add(lblCount);
         header.add(lblTrucks);

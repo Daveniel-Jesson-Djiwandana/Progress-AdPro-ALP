@@ -4,6 +4,9 @@ import database.Database;
 import model.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Map;
 import java.util.Random;
 
 public class IncidentService {
@@ -51,6 +54,7 @@ public class IncidentService {
         Structure structure = new Structure(location, area, victims);
         Incident  incident  = new Incident(structure, severity, description, intensity, reportedBy);
         Database.addIncident(incident);
+        autoDispatch(incident);
         return null;
     }
 
@@ -72,6 +76,7 @@ public class IncidentService {
         Structure structure = new Structure(initialLoc, area, victims);
         Incident  incident  = new Incident(structure, sev, desc, intensity, label);
         Database.addIncident(incident);
+        autoDispatch(incident);
 
         // Perform Nominatim reverse geocoding asynchronously
         new Thread(() -> {
@@ -182,5 +187,77 @@ public class IncidentService {
         for (Incident inc : Database.getAllIncidents())
             if (inc.getStatus() != IncidentStatus.RESOLVED) active.add(inc);
         return active;
+    }
+
+    private static class StationDistance {
+        FireStation station;
+        double distance;
+        StationDistance(FireStation s, double d) {
+            this.station = s;
+            this.distance = d;
+        }
+    }
+
+    public static void autoDispatch(Incident inc) {
+        if (inc.getStatus() == IncidentStatus.RESOLVED || inc.getStatus() == IncidentStatus.DISPATCHED) {
+            return;
+        }
+
+        int count = inc.getRecommendedTrucks();
+        int remaining = count;
+
+        double[] coords = FireStationGraph.parseGpsCoord(inc.getLocation());
+        ArrayList<StationDistance> list = new ArrayList<>();
+
+        if (coords != null) {
+            FireStationGraph graph = Database.getRoadNetwork();
+            FireStationGraph.Node incidentNode = new FireStationGraph.Node("TempAuto", coords[0], coords[1]);
+            graph.addNode(incidentNode);
+            FireStationGraph.Node closestNode = graph.findClosestNode(coords[0], coords[1]);
+            if (closestNode != null) {
+                graph.addEdge("TempAuto", closestNode.id);
+            }
+
+            Map<FireStationGraph.Node, Double> dists = graph.dijkstra(incidentNode);
+
+            for (FireStation station : Database.getFireStations()) {
+                FireStationGraph.Node sNode = new FireStationGraph.Node(station.getName(), station.getLatitude(), station.getLongitude());
+                Double d = dists.get(sNode);
+                if (d != null && station.getAvailableTruckCount() > 0) {
+                    list.add(new StationDistance(station, d));
+                }
+            }
+            graph.removeNode(incidentNode);
+        } else {
+            for (FireStation station : Database.getFireStations()) {
+                if (station.getAvailableTruckCount() > 0) {
+                    list.add(new StationDistance(station, 0.0));
+                }
+            }
+        }
+
+        // Sort by distance (closest first)
+        list.sort(Comparator.comparingDouble(sd -> sd.distance));
+
+        int dispatchedCount = 0;
+        for (StationDistance sd : list) {
+            if (remaining <= 0) break;
+            int avail = sd.station.getAvailableTruckCount();
+            int take = Math.min(remaining, avail);
+
+            ArrayList<Firetruck> assistTrucks = sd.station.getAvailableTrucks();
+            for (int i = 0; i < take; i++) {
+                assistTrucks.get(i).setStatus(TruckStatus.DEPLOYED);
+            }
+
+            dispatchedCount += take;
+            remaining -= take;
+        }
+
+        if (dispatchedCount > 0) {
+            inc.setStatus(IncidentStatus.DISPATCHED);
+            inc.setTrucksAssigned(dispatchedCount);
+            inc.startDispatch();
+        }
     }
 }

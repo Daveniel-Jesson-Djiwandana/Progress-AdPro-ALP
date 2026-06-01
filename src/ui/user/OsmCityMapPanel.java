@@ -50,6 +50,27 @@ public class OsmCityMapPanel extends JPanel {
         map.setZoomContolsVisible(false); // kita buat sendiri
         map.setScrollWrapEnabled(false);
 
+        // Remove default map controller's listeners to prevent double events/conflict
+        for (MouseListener ml : map.getMouseListeners()) {
+            if (ml instanceof DefaultMapController) {
+                map.removeMouseListener(ml);
+            }
+        }
+        for (MouseMotionListener mml : map.getMouseMotionListeners()) {
+            if (mml instanceof DefaultMapController) {
+                map.removeMouseMotionListener(mml);
+            }
+        }
+        for (MouseWheelListener mwl : map.getMouseWheelListeners()) {
+            if (mwl instanceof DefaultMapController) {
+                map.removeMouseWheelListener(mwl);
+            }
+        }
+
+        // Add a new DefaultMapController that supports panning with left-click
+        DefaultMapController controller = new DefaultMapController(map);
+        controller.setMovementMouseButton(MouseEvent.BUTTON1);
+
         // Restrict map panning bounds specifically to Surabaya and snap back if panned outside
         map.addJMVListener(new JMapViewerEventListener() {
             @Override
