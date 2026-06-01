@@ -21,6 +21,7 @@ public class Structure {
 
     public String getStructureID()          { return structureID; }
     public String getLocation()             { return location; }
+    public void   setLocation(String location) { this.location = location; }
     public int    getArea()                 { return area; }
     public int    getCivilianCount()        { return civilian_count; }
     public void   setCivilianCount(int n)   { civilian_count = n; }

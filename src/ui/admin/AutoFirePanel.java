@@ -10,6 +10,7 @@ import ui.components.VectorIcon;
 import javax.swing.*;
 import java.awt.*;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 /**
@@ -207,8 +208,27 @@ public class AutoFirePanel extends JPanel {
     }
 
     private void triggerFire(String label) {
-        Incident inc = IncidentService.randomizeIncident(label + " (Simulasi)");
-        String time  = new SimpleDateFormat("HH:mm:ss").format(new Date());
+        // Use a holder array so the lambda can capture a final reference,
+        // then read the incident after randomizeIncident() returns.
+        Incident[] holder = new Incident[1];
+        holder[0] = IncidentService.randomizeIncident(label + " (Simulasi)", () -> {
+            // Geocoding complete — update the log entry with the resolved address
+            Incident inc = holder[0];
+            if (inc == null) return;
+            for (int i = 0; i < logModel.size(); i++) {
+                String entry = logModel.get(i);
+                if (entry.contains(inc.getIncidentId())) {
+                    String t = entry.substring(1, 9); // HH:mm:ss
+                    String newEntry = String.format("[%s] %s — %s [%s]",
+                        t, inc.getIncidentId(), inc.getLocation(), inc.getSeverity().getLabel());
+                    logModel.set(i, newEntry);
+                    break;
+                }
+            }
+            if (onNewIncident != null) onNewIncident.run();
+        });
+        Incident inc = holder[0];
+        String time  = new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date());
         String entry = String.format("[%s] %s — %s [%s]",
             time, inc.getIncidentId(), inc.getLocation(), inc.getSeverity().getLabel());
         logModel.add(0, entry); // prepend (newest first)
@@ -217,11 +237,63 @@ public class AutoFirePanel extends JPanel {
     }
 
     private void advanceAllProgress() {
+        boolean changed = false;
+
+        // 1. Drain resources of deployed trucks
+        ArrayList<model.Firetruck> stationTrucks = database.Database.getFireStation().getFiretrucks();
+        for (model.Firetruck truck : stationTrucks) {
+            if (truck.getStatus() == model.TruckStatus.DEPLOYED) {
+                // Deployed truck consumes water and fuel
+                int waterDrain = 300; // liters per tick
+                int fuelDrain = 4;    // percent per tick
+                
+                int nextWater = Math.max(0, truck.getCurrentWater() - waterDrain);
+                int nextFuel  = Math.max(0, truck.getFuelLevel() - fuelDrain);
+                
+                truck.setCurrentWater(nextWater);
+                truck.setFuelLevel(nextFuel);
+                changed = true;
+                
+                // If either is empty, return to firestation (set status to AVAILABLE but resource is 0)
+                if (nextWater == 0 || nextFuel == 0) {
+                    truck.setStatus(model.TruckStatus.AVAILABLE);
+                    // Decrement assigned trucks of one active incident
+                    for (Incident inc : service.IncidentService.getActiveIncidents()) {
+                        if (inc.getStatus() == model.IncidentStatus.DISPATCHED && inc.getTrucksAssigned() > 0) {
+                            inc.setTrucksAssigned(inc.getTrucksAssigned() - 1);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Advance progress of incidents and auto-resolve
         for (Incident inc : service.IncidentService.getActiveIncidents()) {
             if (inc.getStatus() == model.IncidentStatus.DISPATCHED && inc.getTrucksAssigned() > 0) {
-                int step = Math.max(1, inc.getTrucksAssigned() * 2);
+                int step = Math.max(2, inc.getTrucksAssigned() * 4);
                 inc.advanceProgress(step);
+                changed = true;
+
+                if (inc.getDispatchProgress() >= 99) {
+                    // Auto-resolve!
+                    int toFree = inc.getTrucksAssigned();
+                    ArrayList<model.Firetruck> deployed = new ArrayList<>();
+                    for (model.Firetruck t : stationTrucks) {
+                        if (t.getStatus() == model.TruckStatus.DEPLOYED) {
+                            deployed.add(t);
+                        }
+                    }
+                    for (int i = 0; i < Math.min(toFree, deployed.size()); i++) {
+                        deployed.get(i).setStatus(model.TruckStatus.AVAILABLE);
+                    }
+                    service.IncidentService.resolveIncident(inc, "Sistem Otomatis", toFree, "Pemadaman otomatis selesai.");
+                }
             }
+        }
+
+        if (changed && onNewIncident != null) {
+            onNewIncident.run();
         }
     }
 }

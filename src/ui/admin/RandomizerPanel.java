@@ -110,9 +110,23 @@ public class RandomizerPanel extends JPanel {
 
     private void randomize() {
         String adminName = Database.getCurrentUser() != null ? Database.getCurrentUser().getName() : "Admin";
-        Incident inc = IncidentService.randomizeIncident(adminName);
+        Incident[] holder = new Incident[1];
+        holder[0] = IncidentService.randomizeIncident(adminName, () -> {
+            // When geocoding finishes, update the HTML display with the resolved address
+            Incident inc = holder[0];
+            if (inc == null) return;
+            String html = buildHtml(inc);
+            lblResult.setText(html);
+        });
 
-        String html = String.format(
+        Incident inc = holder[0];
+        lblResult.setText(buildHtml(inc));
+        resultCard.setVisible(true);
+        revalidate(); repaint();
+    }
+
+    private String buildHtml(Incident inc) {
+        return String.format(
             "<html>" +
             "<b>ID:</b> %s<br>" +
             "<b>Lokasi:</b> %s<br>" +
@@ -127,8 +141,5 @@ public class RandomizerPanel extends JPanel {
             inc.getNumVictimsTrapped(), inc.getFireSpreadArea(),
             inc.getDescription(), inc.getPriorityScore()
         );
-        lblResult.setText(html);
-        resultCard.setVisible(true);
-        revalidate(); repaint();
     }
 }

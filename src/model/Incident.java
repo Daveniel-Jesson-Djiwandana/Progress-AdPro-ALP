@@ -3,6 +3,7 @@ package model;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Random;
 
 /**
  * A fire incident. Matches "Incident" in the class diagram.
@@ -30,7 +31,10 @@ public class Incident implements Comparable<Incident> {
     private IncidentStatus status;
     private String         reportedBy;
     private double         priorityScore;    // precise score for PQ ordering
-    private ArrayList<Civilian> affectedCivilians;
+    private int            victimsCritical;
+    private int            victimsInjured;
+    private int            victimsEvacuated;
+    private int            victimsSafe;
     private int            trucksAssigned;
 
     // ── Bangunan — diisi warga saat lapor ─────────────────────────────────────
@@ -45,6 +49,8 @@ public class Incident implements Comparable<Incident> {
     private LocalDateTime  dispatchStartTime;   // when first truck was sent
     private int            dispatchProgress;    // 0–100 %, simulated handling progress
 
+
+
     public Incident(Structure structure, IncidentSeverity severity, String description,
                     int fireIntensity, String reportedBy) {
         this.id             = counter++;
@@ -55,18 +61,48 @@ public class Incident implements Comparable<Incident> {
         this.reportedBy     = reportedBy;
         this.fire_start_time = LocalDateTime.now();
         this.status         = IncidentStatus.REPORTED;
-        this.affectedCivilians = new ArrayList<>();
-        this.trucksAssigned = 0;
+        this.victimsCritical  = 0;
+        this.victimsInjured   = 0;
+        this.victimsEvacuated = 0;
+        this.victimsSafe      = 0;
+        this.trucksAssigned   = 0;
         this.dispatchProgress = 0;
         this.dispatchStartTime = null;
         this.buildingCategory = null;
         this.buildingSubType  = null;
         this.buildingMaterial = null;
         this.damageLevel      = null;
+        generateCivilians();
     }
 
-    public void addCivilian(Civilian c) {
-        affectedCivilians.add(c);
+    /** Auto-generate simulated civilians based on structure's civilian count */
+    private void generateCivilians() {
+        Random rng = new Random();
+        int count = structure.getCivilianCount();
+        for (int i = 0; i < count; i++) {
+            int roll = rng.nextInt(100);
+            switch (severity) {
+                case CRITICAL:
+                    if (roll < 40)       victimsCritical++;
+                    else if (roll < 70)  victimsInjured++;
+                    else                 victimsSafe++;
+                    break;
+                case HIGH:
+                    if (roll < 20)       victimsCritical++;
+                    else if (roll < 55)  victimsInjured++;
+                    else                 victimsSafe++;
+                    break;
+                case MEDIUM:
+                    if (roll < 5)        victimsCritical++;
+                    else if (roll < 30)  victimsInjured++;
+                    else                 victimsSafe++;
+                    break;
+                default:
+                    if (roll < 10)       victimsInjured++;
+                    else                 victimsSafe++;
+                    break;
+            }
+        }
     }
 
     public void calculatePriorityScore(double victimWeight, double areaWeight, double intensityWeight) {
@@ -104,9 +140,9 @@ public class Incident implements Comparable<Incident> {
         }
     }
 
-    /** Advance progress by given amount (capped at 99 until resolved) */
+    /** Advance progress by given amount (capped at 100 when resolved) */
     public void advanceProgress(int amount) {
-        dispatchProgress = Math.min(99, dispatchProgress + amount);
+        dispatchProgress = Math.min(100, dispatchProgress + amount);
     }
 
     // ── Convenience helpers ───────────────────────────────────────────────────
@@ -138,7 +174,14 @@ public class Incident implements Comparable<Incident> {
     public String          getReportedBy()          { return reportedBy; }
     public double          getPriorityScore()       { return priorityScore; }
     public void            setPriorityScore(double d){ this.priorityScore = d; }
-    public ArrayList<Civilian> getAffectedCivilians(){ return affectedCivilians; }
+    public int getVictimsCritical()   { return victimsCritical; }
+    public void setVictimsCritical(int c) { this.victimsCritical = c; }
+    public int getVictimsInjured()    { return victimsInjured; }
+    public void setVictimsInjured(int i)  { this.victimsInjured = i; }
+    public int getVictimsEvacuated()  { return victimsEvacuated; }
+    public void setVictimsEvacuated(int e) { this.victimsEvacuated = e; }
+    public int getVictimsSafe()       { return victimsSafe; }
+    public void setVictimsSafe(int s) { this.victimsSafe = s; }
     public int             getTrucksAssigned()      { return trucksAssigned; }
     public void            setTrucksAssigned(int n) { this.trucksAssigned = n; }
     public int             getDispatchProgress()    { return dispatchProgress; }

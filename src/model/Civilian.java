@@ -14,9 +14,23 @@ public class Civilian {
         this.locationInBuilding = locationInBuilding;
     }
 
-    public int getId()                    { return id; }
-    public String getName()               { return name; }
-    public CivilianCondition getCondition()         { return condition; }
-    public void setCondition(CivilianCondition c)   { this.condition = c; }
-    public String getLocationInBuilding() { return locationInBuilding; }
+    public int getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public CivilianCondition getCondition() {
+        return condition;
+    }
+
+    public void setCondition(CivilianCondition c) {
+        this.condition = c;
+    }
+
+    public String getLocationInBuilding() {
+        return locationInBuilding;
+    }
 }

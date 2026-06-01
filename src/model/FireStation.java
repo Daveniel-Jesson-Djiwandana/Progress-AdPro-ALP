@@ -32,7 +32,7 @@ public class FireStation {
     public int getAvailableTruckCount() {
         int count = 0;
         for (Firetruck t : firetrucks) {
-            if (t.getStatus() == TruckStatus.AVAILABLE) count++;
+            if (t.getStatus() == TruckStatus.AVAILABLE && t.getCurrentWater() > 0 && t.getFuelLevel() > 0) count++;
         }
         return count;
     }
@@ -40,7 +40,7 @@ public class FireStation {
     public ArrayList<Firetruck> getAvailableTrucks() {
         ArrayList<Firetruck> list = new ArrayList<>();
         for (Firetruck t : firetrucks) {
-            if (t.getStatus() == TruckStatus.AVAILABLE) list.add(t);
+            if (t.getStatus() == TruckStatus.AVAILABLE && t.getCurrentWater() > 0 && t.getFuelLevel() > 0) list.add(t);
         }
         return list;
     }

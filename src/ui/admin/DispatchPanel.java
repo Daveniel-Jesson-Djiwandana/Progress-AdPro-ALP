@@ -7,6 +7,7 @@ import ui.UITheme;
 import ui.components.RoundedButton;
 import ui.components.StatusBadge;
 import ui.components.VectorIcon;
+import ui.user.OsmCityMapPanel;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -34,7 +35,7 @@ public class DispatchPanel extends JPanel {
     private JToggleButton     btnInRadius;
     private JToggleButton     btnAllIncidents;
 
-    private JSpinner   spTrucks;
+    private JLabel     lblRecVal;
     private JTextField tfNotes;
 
     private JPanel    detailOverlay;
@@ -46,9 +47,14 @@ public class DispatchPanel extends JPanel {
     private JComboBox<DamageLevel>      cbDamage;
     private JLabel                      lblBuildingInfo;
 
-    private IncidentMapPanel mapPanel;
+    private OsmCityMapPanel mapPanel;
 
     private Timer autoRefreshTimer;
+
+    // Sidebar collapse/expand state
+    private boolean sidebarVisible = true;
+    private static final int SIDEBAR_W = 360;
+    private JButton btnToggleSidebar;
 
     private static final String[] COLS = {
         "#", "ID", "Lokasi", "Tingkat", "Int.", "Korban", "Status", "Skor"
@@ -63,7 +69,7 @@ public class DispatchPanel extends JPanel {
     }
 
     private void buildUI() {
-        mapPanel = new IncidentMapPanel();
+        mapPanel = new OsmCityMapPanel(null);
         // Callback: klik titik insiden di peta → pilih baris di tabel
         mapPanel.setOnIncidentClicked(row -> {
             if (row >= 0 && row < tableModel.getRowCount()) {
@@ -71,7 +77,7 @@ public class DispatchPanel extends JPanel {
                 table.scrollRectToVisible(table.getCellRect(row, 0, true));
             }
         });
-        JScrollPane mapScroll = mapPanel.createScrollPane();
+        JPanel mapScroll = mapPanel.createScrollPane();
 
         JPanel sidebar = buildSidebar();
 
@@ -80,13 +86,33 @@ public class DispatchPanel extends JPanel {
 
         JPanel zoomBar = buildMapZoomBar();
 
+        // ── Sidebar toggle tab (affix on the right edge of the sidebar) ─────
+        btnToggleSidebar = new JButton("◀");
+        btnToggleSidebar.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 13));
+        btnToggleSidebar.setForeground(UITheme.TEXT_PRIMARY);
+        btnToggleSidebar.setBackground(UITheme.BG_CARD);
+        btnToggleSidebar.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(1, 0, 1, 1, UITheme.BORDER),
+            BorderFactory.createEmptyBorder(6, 4, 6, 4)));
+        btnToggleSidebar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnToggleSidebar.setFocusPainted(false);
+        btnToggleSidebar.setToolTipText("Sembunyikan / Tampilkan panel samping");
+
         JLayeredPane layers = new JLayeredPane() {
             @Override public void doLayout() {
                 int w = getWidth(), h = getHeight();
                 mapScroll.setBounds(0, 0, w, h);
 
-                int sw = 360;
+                int sw = sidebarVisible ? SIDEBAR_W : 0;
                 sidebar.setBounds(0, 0, sw, h);
+                sidebar.setVisible(sidebarVisible);
+
+                // Toggle tab – always visible, sits right at the sidebar's right edge
+                int tabW = 20, tabH = 56;
+                int tabX = sw; // flush with sidebar edge (0 when hidden)
+                int tabY = (h - tabH) / 2;
+                btnToggleSidebar.setBounds(tabX, tabY, tabW, tabH);
+                btnToggleSidebar.setText(sidebarVisible ? "◀" : "▶");
 
                 int dw = 350;
                 detailOverlay.setBounds(w - dw, 0, dw, h);
@@ -95,10 +121,18 @@ public class DispatchPanel extends JPanel {
                 zoomBar.setBounds(w - 120, h - 36, 116, 28);
             }
         };
-        layers.add(mapScroll,     JLayeredPane.DEFAULT_LAYER);
-        layers.add(sidebar,       JLayeredPane.PALETTE_LAYER);
-        layers.add(detailOverlay, JLayeredPane.MODAL_LAYER);
-        layers.add(zoomBar,       JLayeredPane.MODAL_LAYER);
+
+        btnToggleSidebar.addActionListener(e -> {
+            sidebarVisible = !sidebarVisible;
+            layers.doLayout();
+            layers.repaint();
+        });
+
+        layers.add(mapScroll,         JLayeredPane.DEFAULT_LAYER);
+        layers.add(sidebar,           JLayeredPane.PALETTE_LAYER);
+        layers.add(detailOverlay,     JLayeredPane.MODAL_LAYER);
+        layers.add(zoomBar,           JLayeredPane.MODAL_LAYER);
+        layers.add(btnToggleSidebar,  JLayeredPane.POPUP_LAYER);
 
         add(layers, BorderLayout.CENTER);
         layers.setLayout(null);
@@ -280,11 +314,12 @@ public class DispatchPanel extends JPanel {
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
         p.setBorder(new EmptyBorder(12, 16, 16, 16));
 
-        JLabel lbl1 = sLbl("Jumlah kendaraan dikirim:");
-        spTrucks = new JSpinner(new SpinnerNumberModel(1, 1, 8, 1));
-        spTrucks.setFont(UITheme.FONT_BODY);
-        spTrucks.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
-        spTrucks.setAlignmentX(LEFT_ALIGNMENT);
+        JLabel lbl1 = sLbl("Rekomendasi Kendaraan:");
+        lblRecVal = new JLabel("Pilih insiden...");
+        lblRecVal.setFont(new Font("SansSerif", Font.BOLD, 14));
+        lblRecVal.setForeground(UITheme.ACCENT_ORANGE);
+        lblRecVal.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+        lblRecVal.setAlignmentX(LEFT_ALIGNMENT);
 
         JLabel lbl2 = sLbl("Catatan penyelesaian:");
         tfNotes = new JTextField("Kebakaran berhasil dipadamkan.");
@@ -312,7 +347,7 @@ public class DispatchPanel extends JPanel {
 
         p.add(lbl1);
         p.add(Box.createVerticalStrut(4));
-        p.add(spTrucks);
+        p.add(lblRecVal);
         p.add(Box.createVerticalStrut(8));
         p.add(btnDispatch);
         p.add(Box.createVerticalStrut(10));
@@ -470,6 +505,10 @@ public class DispatchPanel extends JPanel {
         table.clearSelection();
         mapPanel.setHighlightedRow(-1);
         mapPanel.repaint();
+        if (lblRecVal != null) {
+            lblRecVal.setText("Pilih insiden...");
+            lblRecVal.setForeground(UITheme.TEXT_SECONDARY);
+        }
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -521,6 +560,10 @@ public class DispatchPanel extends JPanel {
         int row = table.getSelectedRow();
         if (row < 0) {
             detailOverlay.setVisible(false);
+            if (lblRecVal != null) {
+                lblRecVal.setText("Pilih insiden...");
+                lblRecVal.setForeground(UITheme.TEXT_SECONDARY);
+            }
             return;
         }
         ArrayList<Incident> sorted = getSortedIncidents();
@@ -580,10 +623,12 @@ public class DispatchPanel extends JPanel {
             }
         }
 
-        if (!inc.getAffectedCivilians().isEmpty()) {
+        if (inc.getNumVictimsTrapped() > 0) {
             sb.append("\nKorban Terdampak:\n");
-            for (Civilian c : inc.getAffectedCivilians())
-                sb.append(String.format("  • %s [%s]\n", c.getName(), c.getCondition().getLabel()));
+            sb.append(String.format("  • Kritis      : %d orang\n", inc.getVictimsCritical()));
+            sb.append(String.format("  • Luka-luka   : %d orang\n", inc.getVictimsInjured()));
+            sb.append(String.format("  • Dievakuasi  : %d orang\n", inc.getVictimsEvacuated()));
+            sb.append(String.format("  • Aman        : %d orang\n", inc.getVictimsSafe()));
         }
 
         taDetail.setText(sb.toString());
@@ -604,6 +649,19 @@ public class DispatchPanel extends JPanel {
         else cbDamage.setSelectedIndex(0);
 
         detailOverlay.setVisible(true);
+
+        if (lblRecVal != null) {
+            if (inc.getStatus() == IncidentStatus.RESOLVED) {
+                lblRecVal.setText("Selesai (" + inc.getTrucksAssigned() + " Truk)");
+                lblRecVal.setForeground(UITheme.SUCCESS);
+            } else if (inc.getStatus() == IncidentStatus.DISPATCHED) {
+                lblRecVal.setText("Terkirim: " + inc.getTrucksAssigned() + " Truk");
+                lblRecVal.setForeground(UITheme.TEXT_SECONDARY);
+            } else {
+                lblRecVal.setText(inc.getRecommendedTrucks() + " Truk");
+                lblRecVal.setForeground(UITheme.ACCENT_ORANGE);
+            }
+        }
     }
 
     // ── Dispatch & Resolve ────────────────────────────────────────────────────
@@ -612,7 +670,7 @@ public class DispatchPanel extends JPanel {
         if (inc == null) { warn("Pilih insiden terlebih dahulu."); return; }
         if (inc.getStatus() == IncidentStatus.RESOLVED) { info("Insiden ini sudah selesai."); return; }
 
-        int count = (int) spTrucks.getValue();
+        int count = inc.getRecommendedTrucks();
         int remaining = count;
 
         FireStation ownStation = Database.getFireStation();
@@ -687,6 +745,7 @@ public class DispatchPanel extends JPanel {
             return;
         }
 
+
         inc.setStatus(IncidentStatus.DISPATCHED);
         inc.setTrucksAssigned(inc.getTrucksAssigned() + actualTotalDispatched);
         inc.startDispatch();
@@ -709,7 +768,7 @@ public class DispatchPanel extends JPanel {
 
         String notes = tfNotes.getText().trim();
         if (notes.isBlank()) notes = "Kebakaran berhasil dipadamkan.";
-        int trucksUsed = (int) spTrucks.getValue();
+        int trucksUsed = inc.getTrucksAssigned();
 
         int toFree = inc.getTrucksAssigned();
         int freedCount = 0;
@@ -722,7 +781,7 @@ public class DispatchPanel extends JPanel {
             }
         }
 
-        IncidentService.resolveIncident(inc, adminName(), Math.max(trucksUsed, inc.getTrucksAssigned()), notes);
+        IncidentService.resolveIncident(inc, adminName(), trucksUsed, notes);
         closeDetail();
         refresh();
         JOptionPane.showMessageDialog(this,
@@ -816,275 +875,4 @@ public class DispatchPanel extends JPanel {
             "Tersimpan ✓", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // PETA INSIDEN (background panel, scrollable+zoomable+draggable)
-    // ═════════════════════════════════════════════════════════════════════════
-    private class IncidentMapPanel extends JPanel {
-
-        private BufferedImage mapImage;
-        private ArrayList<Incident> incidents = new ArrayList<>();
-        private int highlightedRow = -1;
-
-        private double zoom    = 1.0;
-        private static final double ZOOM_MIN  = 0.5;
-        private static final double ZOOM_MAX  = 4.0;
-        private static final double ZOOM_STEP = 0.15;
-        private int imgW = 1000, imgH = 1000;
-
-        // drag-to-pan
-        private Point dragStart      = null;
-        private Point vpAtDragStart  = null;
-        private boolean dragging     = false;
-        private static final int DRAG_THRESHOLD = 5;
-
-        // callback: klik titik insiden di peta
-        private java.util.function.IntConsumer onIncidentClicked;
-
-        IncidentMapPanel() {
-            setBackground(new Color(18, 22, 32));
-            try {
-                InputStream is = getClass().getResourceAsStream("/ui/user/citymap.png");
-                if (is == null) is = getClass().getResourceAsStream("../user/citymap.png");
-                if (is != null) {
-                    mapImage = ImageIO.read(is);
-                    imgW = mapImage.getWidth();
-                    imgH = mapImage.getHeight();
-                }
-            } catch (Exception ignored) {}
-
-            MouseAdapter ma = new MouseAdapter() {
-                @Override
-                public void mousePressed(MouseEvent e) {
-                    if (SwingUtilities.isLeftMouseButton(e)) {
-                        dragStart = e.getPoint();
-                        JScrollPane sp = getScrollPane();
-                        vpAtDragStart = sp != null ? sp.getViewport().getViewPosition() : new Point(0, 0);
-                        dragging = false;
-                        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                    }
-                }
-
-                @Override
-                public void mouseDragged(MouseEvent e) {
-                    if (dragStart == null) return;
-                    int dx = e.getX() - dragStart.x;
-                    int dy = e.getY() - dragStart.y;
-                    if (!dragging && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
-                        dragging = true;
-                    }
-                    if (dragging) {
-                        JScrollPane sp = getScrollPane();
-                        if (sp != null) {
-                            int nx = vpAtDragStart.x - dx;
-                            int ny = vpAtDragStart.y - dy;
-                            sp.getViewport().setViewPosition(new Point(Math.max(0, nx), Math.max(0, ny)));
-                        }
-                    }
-                }
-
-                @Override
-                public void mouseReleased(MouseEvent e) {
-                    if (!dragging && dragStart != null && SwingUtilities.isLeftMouseButton(e)) {
-                        // Cek apakah klik tepat di atas salah satu titik insiden
-                        int clicked = hitTestIncident(e.getX(), e.getY());
-                        if (clicked >= 0 && onIncidentClicked != null) {
-                            onIncidentClicked.accept(clicked);
-                        }
-                    }
-                    dragStart = null;
-                    vpAtDragStart = null;
-                    dragging = false;
-                    setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                }
-            };
-
-            addMouseListener(ma);
-            addMouseMotionListener(ma);
-
-            addMouseWheelListener(e -> {
-                if (e.isControlDown()) {
-                    double old = zoom;
-                    if (e.getWheelRotation() < 0) zoom = Math.min(ZOOM_MAX, zoom + ZOOM_STEP);
-                    else                           zoom = Math.max(ZOOM_MIN, zoom - ZOOM_STEP);
-                    if (zoom != old) {
-                        updatePreferredSize();
-                        JScrollPane sp = getScrollPane();
-                        if (sp != null) {
-                            double ratio = zoom / old;
-                            Point vp = sp.getViewport().getViewPosition();
-                            int nx = (int)(e.getX() * ratio) - sp.getViewport().getWidth()/2;
-                            int ny = (int)(e.getY() * ratio) - sp.getViewport().getHeight()/2;
-                            sp.getViewport().setViewPosition(new Point(Math.max(0,nx), Math.max(0,ny)));
-                        }
-                        revalidate(); repaint();
-                    }
-                }
-            });
-        }
-
-        void setOnIncidentClicked(java.util.function.IntConsumer cb) { this.onIncidentClicked = cb; }
-
-        /** Kembalikan index insiden yang posisinya dekat titik (mx, my) di panel, atau -1 */
-        private int hitTestIncident(int mx, int my) {
-            int dw = (int)(imgW * zoom);
-            int dh = (int)(imgH * zoom);
-            for (int i = 0; i < incidents.size(); i++) {
-                Incident inc = incidents.get(i);
-                int[] coord  = parseCoord(inc.getLocation());
-                int sx, sy;
-                if (coord != null) {
-                    sx = (int)(coord[0] / 1000.0 * dw);
-                    sy = (int)(coord[1] / 1000.0 * dh);
-                } else {
-                    int hash = Math.abs(inc.getLocation().hashCode());
-                    sx = 50 + (hash % (dw - 100));
-                    sy = 50 + ((hash / (dw - 100)) % (dh - 100));
-                }
-                int hit = (i == highlightedRow) ? 16 : 13;
-                if (Math.abs(mx - sx) <= hit && Math.abs(my - sy) <= hit) return i;
-            }
-            return -1;
-        }
-
-        void zoomIn()    { zoom = Math.min(ZOOM_MAX, zoom + ZOOM_STEP); updatePreferredSize(); revalidate(); repaint(); }
-        void zoomOut()   { zoom = Math.max(ZOOM_MIN, zoom - ZOOM_STEP); updatePreferredSize(); revalidate(); repaint(); }
-        void zoomReset() { zoom = 1.0; updatePreferredSize(); revalidate(); repaint(); }
-        double getZoom() { return zoom; }
-
-        private void updatePreferredSize() {
-            setPreferredSize(new Dimension((int)(imgW * zoom), (int)(imgH * zoom)));
-        }
-
-        private JScrollPane getScrollPane() {
-            Container p = getParent();
-            if (p instanceof JViewport) {
-                Container p2 = p.getParent();
-                if (p2 instanceof JScrollPane) return (JScrollPane) p2;
-            }
-            return null;
-        }
-
-        JScrollPane createScrollPane() {
-            updatePreferredSize();
-            JScrollPane sp = new JScrollPane(this);
-            sp.setOpaque(false);
-            sp.getViewport().setOpaque(false);
-            sp.setBorder(null);
-            sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-            sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-            sp.getHorizontalScrollBar().setUnitIncrement(20);
-            sp.getVerticalScrollBar().setUnitIncrement(20);
-            return sp;
-        }
-
-        void setIncidents(ArrayList<Incident> list) { incidents = new ArrayList<>(list); }
-        void setHighlightedRow(int row)             { highlightedRow = row; }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,  RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-
-            int dw = (int)(imgW * zoom);
-            int dh = (int)(imgH * zoom);
-            int w  = getWidth(), h = getHeight();
-
-            if (mapImage != null) {
-                g2.setColor(Color.BLACK);
-                g2.fillRect(0, 0, Math.max(dw, w), Math.max(dh, h));
-                g2.drawImage(mapImage, 0, 0, dw, dh, null);
-                // overlay gelap tipis agar marker lebih jelas
-                g2.setColor(new Color(0, 0, 0, 80));
-                g2.fillRect(0, 0, dw, dh);
-
-                for (int i = 0; i < incidents.size(); i++) {
-                    Incident inc = incidents.get(i);
-                    int[] coord  = parseCoord(inc.getLocation());
-                    int sx, sy;
-                    if (coord != null) {
-                        sx = (int)(coord[0] / 1000.0 * dw);
-                        sy = (int)(coord[1] / 1000.0 * dh);
-                    } else {
-                        int hash = Math.abs(inc.getLocation().hashCode());
-                        sx = 50 + (hash % (dw - 100));
-                        sy = 50 + ((hash / (dw - 100)) % (dh - 100));
-                    }
-
-                    boolean sel = (i == highlightedRow);
-                    Color col   = severityColor(inc.getSeverity());
-
-                    if (sel) {
-                        // halo solid di sekitar titik terpilih
-                        g2.setColor(UITheme.ACCENT);
-                        g2.setStroke(new BasicStroke(2f));
-                        g2.drawOval(sx - 18, sy - 18, 36, 36);
-                    }
-                    int r = sel ? 11 : 8;
-                    g2.setColor(col);
-                    g2.fillOval(sx - r, sy - r, r * 2, r * 2);
-                    g2.setColor(Color.WHITE);
-                    g2.setStroke(new BasicStroke(sel ? 2.5f : 1.5f));
-                    g2.drawOval(sx - r, sy - r, r * 2, r * 2);
-
-                    // nomor prioritas (P1, P2, ...)
-                    String lbl = String.valueOf(i + 1);
-                    Font f = new Font(UITheme.FONT_FAMILY, Font.BOLD, sel ? 11 : 9);
-                    g2.setFont(f);
-                    FontMetrics fm = g2.getFontMetrics(f);
-                    g2.setColor(Color.WHITE);
-                    g2.drawString(lbl, sx - fm.stringWidth(lbl)/2, sy + fm.getAscent()/2 - 1);
-
-                    // tooltip nama lokasi jika dipilih
-                    if (sel) {
-                        String name = truncate(inc.getLocation().replaceAll("\\[.*?\\]","").trim(), 28);
-                        Font nf = new Font(UITheme.FONT_FAMILY, Font.BOLD, 11);
-                        g2.setFont(nf);
-                        FontMetrics nfm = g2.getFontMetrics(nf);
-                        int lw = nfm.stringWidth(name) + 12, lh = nfm.getHeight() + 5;
-                        int lx = Math.max(4, Math.min(sx - lw/2, w - lw - 4));
-                        int ly = (sy - r - lh - 4 < 4) ? sy + r + 4 : sy - r - lh - 4;
-                        g2.setColor(Color.BLACK);
-                        g2.fillRoundRect(lx, ly, lw, lh, 6, 6);
-                        g2.setColor(UITheme.ACCENT);
-                        g2.setStroke(new BasicStroke(1f));
-                        g2.drawRoundRect(lx, ly, lw, lh, 6, 6);
-                        g2.setColor(Color.WHITE);
-                        g2.drawString(name, lx + 6, ly + nfm.getAscent() + 2);
-                    }
-                }
-
-                drawLegend(g2, dw, dh);
-
-            } else {
-                g2.setColor(Color.BLACK);
-                g2.fillRect(0, 0, dw, dh);
-                g2.setColor(UITheme.TEXT_SECONDARY);
-                g2.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 14));
-                g2.drawString("citymap.png tidak ditemukan", dw/2 - 100, dh/2);
-            }
-
-            g2.dispose();
-        }
-
-        private void drawLegend(Graphics2D g2, int w, int h) {
-            String[] labels = {"Kritis", "Tinggi", "Sedang", "Rendah"};
-            int lx = w - 80, ly = h - 80;
-            g2.setColor(Color.BLACK);
-            g2.fillRoundRect(lx - 8, ly - 6, 82, labels.length * 18 + 12, 8, 8);
-            g2.setFont(new Font(UITheme.FONT_FAMILY, Font.PLAIN, 10));
-            for (int i = 0; i < labels.length; i++) {
-                g2.setColor(UITheme.ACCENT);
-                g2.fillOval(lx, ly + i * 18 + 3, 8, 8);
-                g2.setColor(UITheme.TEXT_SECONDARY);
-                g2.drawString(labels[i], lx + 13, ly + i * 18 + 11);
-            }
-        }
-
-        private Color severityColor(IncidentSeverity s) {
-            // Semua severity pakai warna aksen; ukuran titik beda berdasar prioritas
-            return UITheme.ACCENT;
-        }
-    }
 }
