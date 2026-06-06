@@ -80,7 +80,7 @@ public class AutoFirePanel extends JPanel {
         countdownInner.setOpaque(false);
         countdownInner.setLayout(new BoxLayout(countdownInner, BoxLayout.Y_AXIS));
 
-        lblStatus = new JLabel("● Sistem MATI", SwingConstants.CENTER);
+        lblStatus = new JLabel("Sistem MATI", SwingConstants.CENTER);
         lblStatus.setFont(UITheme.FONT_SUB);
         lblStatus.setForeground(UITheme.TEXT_MUTED);
         lblStatus.setAlignmentX(CENTER_ALIGNMENT);
@@ -188,7 +188,7 @@ public class AutoFirePanel extends JPanel {
         if (running) {
             countdown = intervalSec;
             lblCountdown.setText(String.valueOf(countdown));
-            lblStatus.setText("● Sistem AKTIF");
+            lblStatus.setText("Sistem AKTIF");
             lblStatus.setForeground(UITheme.SUCCESS);
             btnToggle.setBaseColor(UITheme.DANGER);
             btnToggle.setText("  Matikan Sistem");
@@ -198,7 +198,7 @@ public class AutoFirePanel extends JPanel {
         } else {
             countdownTimer.stop();
             lblCountdown.setText("--");
-            lblStatus.setText("● Sistem MATI");
+            lblStatus.setText("Sistem MATI");
             lblStatus.setForeground(UITheme.TEXT_MUTED);
             btnToggle.setBaseColor(UITheme.SUCCESS);
             btnToggle.setText("  Aktifkan Sistem");

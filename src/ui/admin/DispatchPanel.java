@@ -101,7 +101,7 @@ public class DispatchPanel extends JPanel {
         JPanel zoomBar = buildMapZoomBar();
 
         // ── Sidebar toggle tab (affix on the right edge of the sidebar) ─────
-        btnToggleSidebar = new JButton("◀");
+        btnToggleSidebar = new JButton("<");
         btnToggleSidebar.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 13));
         btnToggleSidebar.setForeground(UITheme.TEXT_PRIMARY);
         btnToggleSidebar.setBackground(UITheme.BG_CARD);
@@ -126,7 +126,7 @@ public class DispatchPanel extends JPanel {
                 int tabX = sw; // flush with sidebar edge (0 when hidden)
                 int tabY = (h - tabH) / 2;
                 btnToggleSidebar.setBounds(tabX, tabY, tabW, tabH);
-                btnToggleSidebar.setText(sidebarVisible ? "◀" : "▶");
+                btnToggleSidebar.setText(sidebarVisible ? "<" : ">");
 
                 int dw = 350;
                 detailOverlay.setBounds(w - dw, 0, dw, h);
@@ -162,9 +162,9 @@ public class DispatchPanel extends JPanel {
         lblZ.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 10));
         lblZ.setForeground(UITheme.TEXT_SECONDARY);
 
-        JButton btnOut = mkZBtn("−");
+        JButton btnOut = mkZBtn("-");
         JButton btnIn  = mkZBtn("+");
-        JButton btnRst = mkZBtn("⊙");
+        JButton btnRst = mkZBtn("o");
 
         btnOut.addActionListener(e -> { mapPanel.zoomOut(); lblZ.setText(String.format("%.0f%%", mapPanel.getZoom()*100)); });
         btnIn .addActionListener(e -> { mapPanel.zoomIn();  lblZ.setText(String.format("%.0f%%", mapPanel.getZoom()*100)); });
@@ -203,7 +203,7 @@ public class DispatchPanel extends JPanel {
         title.setFont(UITheme.FONT_HEADING);
         title.setForeground(UITheme.TEXT_PRIMARY);
 
-        JButton btnCloseSidebar = new JButton("✕");
+        JButton btnCloseSidebar = new JButton("X");
         btnCloseSidebar.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 14));
         btnCloseSidebar.setForeground(UITheme.TEXT_SECONDARY);
         btnCloseSidebar.setBackground(new Color(0, 0, 0, 0));
@@ -271,7 +271,8 @@ public class DispatchPanel extends JPanel {
         filterRow2.add(cbFilterCategory);
         filterRow2.add(cbFilterSeverity);
 
-        JButton btnRefresh = new JButton("⟳ Perbarui");
+        JButton btnRefresh = new JButton(" Perbarui");
+        btnRefresh.setIcon(new VectorIcon(VectorIcon.Type.REFRESH, 14, UITheme.ACCENT_ORANGE));
         btnRefresh.setFont(UITheme.FONT_SMALL);
         btnRefresh.setForeground(UITheme.ACCENT_ORANGE);
         btnRefresh.setBackground(UITheme.BG_CARD);
@@ -313,7 +314,7 @@ public class DispatchPanel extends JPanel {
                     boolean s, boolean f, int row, int col) {
                 super.getTableCellRendererComponent(t, v, s, f, row, col);
                 setHorizontalAlignment(CENTER);
-                setText(row == 0 ? "🔴" : "P" + (row+1));
+                setText(row == 0 ? "P1" : "P" + (row+1));
                 setForeground(row == 0 ? UITheme.DANGER : UITheme.TEXT_SECONDARY);
                 setBackground(s ? UITheme.ACCENT : UITheme.BG_SURFACE);
                 setOpaque(true);
@@ -388,12 +389,10 @@ public class DispatchPanel extends JPanel {
         JLabel lbl2 = sLbl("Catatan penyelesaian:");
         tfNotes = new JTextField("Kebakaran berhasil dipadamkan.");
         tfNotes.setFont(UITheme.FONT_SMALL);
-        tfNotes.setBackground(new Color(30, 35, 50));
+        tfNotes.setBackground(UITheme.BG_DARK);
         tfNotes.setForeground(UITheme.TEXT_PRIMARY);
         tfNotes.setCaretColor(UITheme.ACCENT_ORANGE);
-        tfNotes.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(UITheme.BORDER),
-            BorderFactory.createEmptyBorder(4, 6, 4, 6)));
+        tfNotes.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
         tfNotes.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
         tfNotes.setAlignmentX(LEFT_ALIGNMENT);
 
@@ -441,7 +440,7 @@ public class DispatchPanel extends JPanel {
         lblDetailTitle.setForeground(UITheme.ACCENT_ORANGE);
         lblDetailTitle.setBorder(new EmptyBorder(12, 14, 8, 14));
 
-        JButton btnClose = new JButton("✕  Tutup");
+        JButton btnClose = new JButton("X  Tutup");
         btnClose.setFont(UITheme.FONT_SMALL);
         btnClose.setForeground(UITheme.TEXT_SECONDARY);
         btnClose.setBackground(UITheme.BG_CARD);
@@ -495,7 +494,7 @@ public class DispatchPanel extends JPanel {
         adminForm.setBorder(new EmptyBorder(6, 14, 14, 14));
 
         // Separator
-        JLabel sep = new JLabel("───  Laporan Lapangan (Admin)  ───");
+        JLabel sep = new JLabel("---  Laporan Lapangan (Admin)  ---");
         sep.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 10));
         sep.setForeground(UITheme.ACCENT_ORANGE);
         sep.setAlignmentX(LEFT_ALIGNMENT);
@@ -503,7 +502,7 @@ public class DispatchPanel extends JPanel {
         adminForm.add(Box.createVerticalStrut(8));
 
         // Kode Kebakaran / Severity
-        adminForm.add(adminLbl("🚨 Kode Kebakaran (Keparahan):"));
+        adminForm.add(adminLbl("Kode Kebakaran (Keparahan):"));
         adminForm.add(Box.createVerticalStrut(3));
         cbSeverityAdmin = new JComboBox<>(IncidentSeverity.values());
         cbSeverityAdmin.setBackground(UITheme.BG_CARD);
@@ -526,7 +525,7 @@ public class DispatchPanel extends JPanel {
         adminForm.add(Box.createVerticalStrut(10));
 
         // Material dominan
-        adminForm.add(adminLbl("🧱 Material Dominan:"));
+        adminForm.add(adminLbl("Material Dominan:"));
         adminForm.add(Box.createVerticalStrut(3));
         cbMaterial = new JComboBox<>(BuildingMaterial.values());
         cbMaterial.setBackground(UITheme.BG_CARD);
@@ -550,7 +549,7 @@ public class DispatchPanel extends JPanel {
         adminForm.add(Box.createVerticalStrut(10));
 
         // Tingkat kerusakan
-        adminForm.add(adminLbl("💥 Tingkat Kerusakan:"));
+        adminForm.add(adminLbl("Tingkat Kerusakan:"));
         adminForm.add(Box.createVerticalStrut(3));
         cbDamage = new JComboBox<>(DamageLevel.values());
         cbDamage.setBackground(UITheme.BG_CARD);
@@ -574,7 +573,7 @@ public class DispatchPanel extends JPanel {
         adminForm.add(Box.createVerticalStrut(10));
 
         // Korban aktual
-        adminForm.add(adminLbl("👥 Korban Aktual (Cek Lapangan):"));
+        adminForm.add(adminLbl("Korban Aktual (Cek Lapangan):"));
         adminForm.add(Box.createVerticalStrut(3));
         JPanel victimsGrid = new JPanel(new GridLayout(2, 2, 6, 6));
         victimsGrid.setOpaque(false);
@@ -599,7 +598,7 @@ public class DispatchPanel extends JPanel {
         areaAdminPanel.setOpaque(false);
         areaAdminPanel.setLayout(new BoxLayout(areaAdminPanel, BoxLayout.Y_AXIS));
         areaAdminPanel.setAlignmentX(LEFT_ALIGNMENT);
-        areaAdminPanel.add(adminLbl("📐 Luas Area Terbakar (m²) — Observasi Lapangan:"));
+        areaAdminPanel.add(adminLbl("Luas Area Terbakar (m2) - Observasi Lapangan:"));
         areaAdminPanel.add(Box.createVerticalStrut(3));
         spAreaAdmin = new JSpinner(new SpinnerNumberModel(0, 0, 99999, 10));
         spAreaAdmin.setFont(UITheme.FONT_SMALL);
@@ -628,7 +627,9 @@ public class DispatchPanel extends JPanel {
         adminScroll.setOpaque(false);
         adminScroll.getViewport().setOpaque(false);
         adminScroll.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, UITheme.BORDER));
-        adminScroll.setPreferredSize(new Dimension(0, 320));
+        adminScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        adminScroll.getVerticalScrollBar().setUnitIncrement(12);
+        adminScroll.setPreferredSize(new Dimension(320, 300));
 
         panel.add(detailHeader, BorderLayout.NORTH);
         panel.add(centerPanel,  BorderLayout.CENTER);
@@ -667,7 +668,7 @@ public class DispatchPanel extends JPanel {
             String prefix = "";
             if (adminStation != null) {
                 double dist = getDijkstraDistance(adminStation, inc);
-                prefix = (dist <= 5.0) ? "📍 " : "🌐 ";
+                prefix = (dist <= 5.0) ? "• " : "  ";
             }
             tableModel.addRow(new Object[]{
                 "",
@@ -675,7 +676,7 @@ public class DispatchPanel extends JPanel {
                 truncate(inc.getLocation(), 18),
                 inc.getSeverity(),
                 inc.getFireIntensity() + "/10",
-                inc.getNumVictimsTrapped() + "👤",
+                String.valueOf(inc.getNumVictimsTrapped()),
                 inc.getStatus(),
                 String.format("%.0f", inc.getPriorityScore())
             });
@@ -790,9 +791,9 @@ public class DispatchPanel extends JPanel {
         // ── Tampilkan info bangunan dari pelapor ────────────────────────────
         String bldg = inc.getBuildingLabel();
         if (inc.getBuildingCategory() != null) {
-            lblBuildingInfo.setText("🏠 Objek: " + bldg);
+            lblBuildingInfo.setText("Objek: " + bldg);
         } else {
-            lblBuildingInfo.setText("🏠 Objek terbakar: belum diisi pelapor");
+            lblBuildingInfo.setText("Objek terbakar: belum diisi pelapor");
         }
 
         // Pre-fill admin form dari data yang sudah tersimpan (jika ada)
@@ -938,7 +939,7 @@ public class DispatchPanel extends JPanel {
         }
         msg += "<br><br>Lokasi: " + inc.getLocation() + "<br>Insiden: " + inc.getIncidentId() + "<br>Oleh: " + admin + "</html>";
 
-        JOptionPane.showMessageDialog(this, msg, "Kendaraan Dikirim ✓", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this, msg, "Kendaraan Dikirim", JOptionPane.INFORMATION_MESSAGE);
         refresh();
     }
 
@@ -971,7 +972,7 @@ public class DispatchPanel extends JPanel {
         JOptionPane.showMessageDialog(this,
             "<html><b>Insiden " + inc.getIncidentId() + " selesai!</b><br>" +
             "Lokasi: " + inc.getLocation() + "<br><i>Tim langsung kembali ke pos. Laporan penyebab diserahkan ke Kepolisian.</i></html>",
-            "Insiden Selesai ✓", JOptionPane.INFORMATION_MESSAGE);
+            "Insiden Selesai", JOptionPane.INFORMATION_MESSAGE);
         refresh();
     }
 
@@ -1114,7 +1115,7 @@ public class DispatchPanel extends JPanel {
             + "Material: <b>" + inc.getBuildingMaterial().getLabel() + "</b><br>"
             + "Kerusakan: <b>" + (inc.getDamageLevel() != null ? inc.getDamageLevel().getLabel() : "-") + "</b><br>"
             + "Korban Kritis/Luka: <b>" + inc.getVictimsCritical() + "/" + inc.getVictimsInjured() + " orang</b></html>",
-            "Tersimpan ✓", JOptionPane.INFORMATION_MESSAGE);
+            "Tersimpan", JOptionPane.INFORMATION_MESSAGE);
         
         refresh();
     }

@@ -6,33 +6,31 @@ import javax.swing.table.*;
 
 public class UITheme {
 
-    // ── Palet: Hitam + Aksen Merah Tua #8c1b1b ──────────────────────────────
-    public static final Color ACCENT        = new Color(0x8c, 0x1b, 0x1b); // #8c1b1b
+    // ── Palet: Slate + High-Contrast Emergency ──────────────────────────────
+    public static final Color ACCENT        = new Color(239, 68, 68);    // #EF4444 Emergency Red
+    public static final Color ACCENT_RED    = new Color(239, 68, 68);    // #EF4444
+    public static final Color ACCENT_ORANGE = new Color(249, 115, 22);   // #F97316 Amber/Orange
+    public static final Color ACCENT_YELLOW = new Color(234, 179, 8);    // #EAB308 Warning Yellow
 
     // Background
-    public static final Color BG_DARK       = Color.BLACK;
-    public static final Color BG_SURFACE    = new Color(10, 10, 10);
-    public static final Color BG_CARD       = new Color(18, 18, 18);
-    public static final Color BG_SIDEBAR    = Color.BLACK;
-
-    // Backward-compat aliases — sekarang semua pakai ACCENT
-    public static final Color ACCENT_RED    = ACCENT;
-    public static final Color ACCENT_ORANGE = ACCENT;
-    public static final Color ACCENT_YELLOW = ACCENT;
+    public static final Color BG_DARK       = new Color(0, 0, 0);        // Pure Black `#000000`
+    public static final Color BG_SURFACE    = new Color(24, 24, 27);     // Zinc-900 `#18181B`
+    public static final Color BG_CARD       = new Color(39, 39, 42);     // Zinc-800 `#27272A`
+    public static final Color BG_SIDEBAR    = new Color(10, 10, 10);     // Carbon Black `#0A0A0A`
 
     // Typography
-    public static final Color TEXT_PRIMARY   = new Color(240, 240, 240);
-    public static final Color TEXT_SECONDARY = new Color(150, 150, 150);
-    public static final Color TEXT_MUTED     = new Color(70, 70, 70);
+    public static final Color TEXT_PRIMARY   = new Color(248, 250, 252);  // Slate-50 `#F8FAFC`
+    public static final Color TEXT_SECONDARY = new Color(203, 213, 225);  // Slate-300 `#CBD5E1`
+    public static final Color TEXT_MUTED     = new Color(148, 163, 184);  // Slate-400 `#94A3B8`
 
-    // Status — semua pakai aksen atau turunan hitam/putih
-    public static final Color SUCCESS = new Color(180, 180, 180);  // abu terang (netral ok)
-    public static final Color WARNING = ACCENT;                    // pakai aksen merah tua
-    public static final Color DANGER  = ACCENT;                    // pakai aksen merah tua
-    public static final Color INFO    = new Color(120, 120, 120);  // abu sedang
+    // Status
+    public static final Color SUCCESS = new Color(16, 185, 129);  // Emerald Green `#10B981`
+    public static final Color WARNING = ACCENT_ORANGE;            // Amber Orange
+    public static final Color DANGER  = ACCENT_RED;               // Emergency Red
+    public static final Color INFO    = new Color(59, 130, 246);  // Royal Blue `#3B82F6`
 
     // Borders
-    public static final Color BORDER = new Color(45, 45, 45);
+    public static final Color BORDER = new Color(63, 63, 70);    // Zinc-700 `#3F3F46`
 
     // Incident status
     public static final Color STATUS_REPORTED   = INFO;
@@ -41,7 +39,7 @@ public class UITheme {
 
     // Severities
     public static final Color SEV_LOW      = SUCCESS;
-    public static final Color SEV_MEDIUM   = new Color(180, 180, 180);
+    public static final Color SEV_MEDIUM   = WARNING;
     public static final Color SEV_HIGH     = ACCENT;
     public static final Color SEV_CRITICAL = ACCENT;
 
@@ -94,8 +92,9 @@ public class UITheme {
             @Override
             public void paint(Graphics2D g, JButton object, int width, int height) {
                 if (object.isContentAreaFilled()) {
+                    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     g.setColor(object.getBackground());
-                    g.fillRect(0, 0, width, height);
+                    g.fillRoundRect(0, 0, width, height, 12, 12);
                 }
             }
         };
@@ -108,9 +107,10 @@ public class UITheme {
             @Override
             public void paint(Graphics2D g, JButton object, int width, int height) {
                 if (object.isContentAreaFilled()) {
+                    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     Color bg = object.getBackground();
-                    g.setColor(new Color(Math.min(255, bg.getRed() + 15), Math.min(255, bg.getGreen() + 15), Math.min(255, bg.getBlue() + 15)));
-                    g.fillRect(0, 0, width, height);
+                    g.setColor(new Color(Math.min(255, bg.getRed() + 20), Math.min(255, bg.getGreen() + 20), Math.min(255, bg.getBlue() + 20)));
+                    g.fillRoundRect(0, 0, width, height, 12, 12);
                 }
             }
         });
@@ -118,9 +118,10 @@ public class UITheme {
             @Override
             public void paint(Graphics2D g, JButton object, int width, int height) {
                 if (object.isContentAreaFilled()) {
+                    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     Color bg = object.getBackground();
-                    g.setColor(new Color(Math.min(255, bg.getRed() + 15), Math.min(255, bg.getGreen() + 15), Math.min(255, bg.getBlue() + 15)));
-                    g.fillRect(0, 0, width, height);
+                    g.setColor(new Color(Math.min(255, bg.getRed() + 20), Math.min(255, bg.getGreen() + 20), Math.min(255, bg.getBlue() + 20)));
+                    g.fillRoundRect(0, 0, width, height, 12, 12);
                 }
             }
         });
@@ -129,9 +130,10 @@ public class UITheme {
             @Override
             public void paint(Graphics2D g, JButton object, int width, int height) {
                 if (object.isContentAreaFilled()) {
+                    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     Color bg = object.getBackground();
-                    g.setColor(new Color(Math.max(0, bg.getRed() - 15), Math.max(0, bg.getGreen() - 15), Math.max(0, bg.getBlue() - 15)));
-                    g.fillRect(0, 0, width, height);
+                    g.setColor(new Color(Math.max(0, bg.getRed() - 20), Math.max(0, bg.getGreen() - 20), Math.max(0, bg.getBlue() - 20)));
+                    g.fillRoundRect(0, 0, width, height, 12, 12);
                 }
             }
         });
@@ -139,9 +141,10 @@ public class UITheme {
             @Override
             public void paint(Graphics2D g, JButton object, int width, int height) {
                 if (object.isContentAreaFilled()) {
+                    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     Color bg = object.getBackground();
-                    g.setColor(new Color(Math.max(0, bg.getRed() - 15), Math.max(0, bg.getGreen() - 15), Math.max(0, bg.getBlue() - 15)));
-                    g.fillRect(0, 0, width, height);
+                    g.setColor(new Color(Math.max(0, bg.getRed() - 20), Math.max(0, bg.getGreen() - 20), Math.max(0, bg.getBlue() - 20)));
+                    g.fillRoundRect(0, 0, width, height, 12, 12);
                 }
             }
         });
@@ -150,8 +153,9 @@ public class UITheme {
             @Override
             public void paint(Graphics2D g, JButton object, int width, int height) {
                 if (object.isContentAreaFilled()) {
-                    g.setColor(new Color(30, 30, 30));
-                    g.fillRect(0, 0, width, height);
+                    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g.setColor(new Color(30, 41, 59));
+                    g.fillRoundRect(0, 0, width, height, 12, 12);
                 }
             }
         };
@@ -162,8 +166,9 @@ public class UITheme {
             @Override
             public void paint(Graphics2D g, JToggleButton object, int width, int height) {
                 if (object.isContentAreaFilled()) {
+                    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     g.setColor(object.isSelected() ? ACCENT : object.getBackground());
-                    g.fillRect(0, 0, width, height);
+                    g.fillRoundRect(0, 0, width, height, 12, 12);
                 }
             }
         };
@@ -173,9 +178,10 @@ public class UITheme {
             @Override
             public void paint(Graphics2D g, JToggleButton object, int width, int height) {
                 if (object.isContentAreaFilled()) {
+                    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     Color bg = object.getBackground();
-                    g.setColor(new Color(Math.min(255, bg.getRed() + 15), Math.min(255, bg.getGreen() + 15), Math.min(255, bg.getBlue() + 15)));
-                    g.fillRect(0, 0, width, height);
+                    g.setColor(object.isSelected() ? ACCENT.brighter() : new Color(Math.min(255, bg.getRed() + 20), Math.min(255, bg.getGreen() + 20), Math.min(255, bg.getBlue() + 20)));
+                    g.fillRoundRect(0, 0, width, height, 12, 12);
                 }
             }
         });
@@ -187,13 +193,121 @@ public class UITheme {
             @Override
             public void paint(Graphics2D g, JToggleButton object, int width, int height) {
                 if (object.isContentAreaFilled()) {
-                    g.setColor(new Color(30, 30, 30));
-                    g.fillRect(0, 0, width, height);
+                    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g.setColor(new Color(30, 41, 59));
+                    g.fillRoundRect(0, 0, width, height, 12, 12);
                 }
             }
         };
         javax.swing.UIManager.put("ToggleButton[Disabled].backgroundPainter", disabledTogglePainter);
         javax.swing.UIManager.put("ToggleButton[Disabled+Selected].backgroundPainter", disabledTogglePainter);
+
+        // Custom flat rounded text field painters
+        javax.swing.Painter<JComponent> textFieldPainter = new javax.swing.Painter<JComponent>() {
+            @Override
+            public void paint(Graphics2D g, JComponent object, int width, int height) {
+                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                // Background
+                g.setColor(object.isEnabled() ? object.getBackground() : BG_SURFACE);
+                g.fillRoundRect(1, 1, width - 2, height - 2, 12, 12);
+                
+                // Border
+                g.setColor(object.hasFocus() ? ACCENT : BORDER);
+                g.setStroke(new BasicStroke(1.5f));
+                g.drawRoundRect(1, 1, width - 2, height - 2, 12, 12);
+            }
+        };
+        javax.swing.UIManager.put("TextField[Enabled].backgroundPainter", textFieldPainter);
+        javax.swing.UIManager.put("TextField[Focused].backgroundPainter", textFieldPainter);
+        javax.swing.UIManager.put("TextField[Disabled].backgroundPainter", textFieldPainter);
+        javax.swing.UIManager.put("PasswordField[Enabled].backgroundPainter", textFieldPainter);
+        javax.swing.UIManager.put("PasswordField[Focused].backgroundPainter", textFieldPainter);
+        javax.swing.UIManager.put("PasswordField[Disabled].backgroundPainter", textFieldPainter);
+
+        // Custom flat rounded combo box painters
+        javax.swing.Painter<JComboBox> comboBoxPainter = new javax.swing.Painter<JComboBox>() {
+            @Override
+            public void paint(Graphics2D g, JComboBox object, int width, int height) {
+                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                // Background
+                g.setColor(object.getBackground());
+                g.fillRoundRect(1, 1, width - 2, height - 2, 12, 12);
+                
+                // Border
+                g.setColor(object.hasFocus() ? ACCENT : BORDER);
+                g.setStroke(new BasicStroke(1.5f));
+                g.drawRoundRect(1, 1, width - 2, height - 2, 12, 12);
+            }
+        };
+        javax.swing.UIManager.put("ComboBox[Enabled].backgroundPainter", comboBoxPainter);
+        javax.swing.UIManager.put("ComboBox[Focused].backgroundPainter", comboBoxPainter);
+        javax.swing.UIManager.put("ComboBox[MouseOver].backgroundPainter", comboBoxPainter);
+        javax.swing.UIManager.put("ComboBox[Pressed].backgroundPainter", comboBoxPainter);
+
+        // ComboBox arrow button styling to remove gradients
+        javax.swing.Painter<JComponent> arrowButtonPainter = new javax.swing.Painter<JComponent>() {
+            @Override
+            public void paint(Graphics2D g, JComponent object, int width, int height) {
+                g.setColor(object.getBackground());
+                g.fillRect(0, 0, width, height);
+            }
+        };
+        javax.swing.UIManager.put("ComboBox:\"ComboBox.arrowButton\"[Enabled].backgroundPainter", arrowButtonPainter);
+        javax.swing.UIManager.put("ComboBox:\"ComboBox.arrowButton\"[MouseOver].backgroundPainter", arrowButtonPainter);
+        javax.swing.UIManager.put("ComboBox:\"ComboBox.arrowButton\"[Pressed].backgroundPainter", arrowButtonPainter);
+
+        // Scrollbar styling to make thumbs flat and solid
+        javax.swing.Painter<JComponent> scrollBarThumbPainter = new javax.swing.Painter<JComponent>() {
+            @Override
+            public void paint(Graphics2D g, JComponent object, int width, int height) {
+                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g.setColor(BORDER);
+                g.fillRoundRect(2, 2, width - 4, height - 4, 6, 6);
+            }
+        };
+        javax.swing.Painter<JComponent> scrollBarTrackPainter = new javax.swing.Painter<JComponent>() {
+            @Override
+            public void paint(Graphics2D g, JComponent object, int width, int height) {
+                g.setColor(BG_DARK);
+                g.fillRect(0, 0, width, height);
+            }
+        };
+        javax.swing.UIManager.put("ScrollBar:ScrollBarThumb[Enabled].backgroundPainter", scrollBarThumbPainter);
+        javax.swing.UIManager.put("ScrollBar:ScrollBarThumb[MouseOver].backgroundPainter", scrollBarThumbPainter);
+        javax.swing.UIManager.put("ScrollBar:ScrollBarTrack[Enabled].backgroundPainter", scrollBarTrackPainter);
+
+        // TableHeader flat background painter to remove gradients
+        javax.swing.Painter<JComponent> tableHeaderPainter = new javax.swing.Painter<JComponent>() {
+            @Override
+            public void paint(Graphics2D g, JComponent object, int width, int height) {
+                g.setColor(BG_CARD);
+                g.fillRect(0, 0, width, height);
+                g.setColor(BORDER);
+                g.drawLine(0, height - 1, width, height - 1);
+            }
+        };
+        javax.swing.UIManager.put("TableHeader[Enabled].backgroundPainter", tableHeaderPainter);
+
+        // ProgressBar flat background painter
+        javax.swing.Painter<JProgressBar> progressBarBgPainter = new javax.swing.Painter<JProgressBar>() {
+            @Override
+            public void paint(Graphics2D g, JProgressBar object, int width, int height) {
+                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g.setColor(BG_DARK);
+                g.fillRoundRect(0, 0, width, height, 8, 8);
+            }
+        };
+        // ProgressBar flat foreground painter
+        javax.swing.Painter<JProgressBar> progressBarFgPainter = new javax.swing.Painter<JProgressBar>() {
+            @Override
+            public void paint(Graphics2D g, JProgressBar object, int width, int height) {
+                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g.setColor(object.getForeground());
+                g.fillRoundRect(0, 0, width, height, 8, 8);
+            }
+        };
+        javax.swing.UIManager.put("ProgressBar[Enabled].backgroundPainter", progressBarBgPainter);
+        javax.swing.UIManager.put("ProgressBar[Enabled].foregroundPainter", progressBarFgPainter);
 
         javax.swing.UIManager.put("control",                  BG_SURFACE);
         javax.swing.UIManager.put("info",                     BG_CARD);
@@ -214,9 +328,16 @@ public class UITheme {
         javax.swing.UIManager.put("OptionPane.background",    BG_SURFACE);
         javax.swing.UIManager.put("Panel.background",         BG_SURFACE);
 
+        javax.swing.UIManager.put("ComboBox.background",      BG_SURFACE);
+        javax.swing.UIManager.put("ComboBox.foreground",      TEXT_PRIMARY);
+
         javax.swing.UIManager.put("TextField.background",     BG_DARK);
         javax.swing.UIManager.put("TextField.foreground",     TEXT_PRIMARY);
         javax.swing.UIManager.put("TextField.caretForeground",TEXT_PRIMARY);
+
+        javax.swing.UIManager.put("PasswordField.background", BG_DARK);
+        javax.swing.UIManager.put("PasswordField.foreground", TEXT_PRIMARY);
+        javax.swing.UIManager.put("PasswordField.caretForeground", TEXT_PRIMARY);
 
         javax.swing.UIManager.put("ScrollBar.thumb",          BORDER);
         javax.swing.UIManager.put("ScrollBar.track",          BG_DARK);

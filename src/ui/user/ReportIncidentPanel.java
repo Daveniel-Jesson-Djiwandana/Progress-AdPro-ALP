@@ -55,8 +55,8 @@ public class ReportIncidentPanel extends JPanel {
         JPanel zoomBar = buildZoomBar();
         sidebarPanel = buildSidebar();
 
-        // Tombol buka form (muncul saat sidebar ditutup)
-        JButton btnOpenForm = new JButton("📋 Form Laporan");
+        JButton btnOpenForm = new JButton(" Form Laporan");
+        btnOpenForm.setIcon(new VectorIcon(VectorIcon.Type.REPORT, 14, Color.WHITE));
         btnOpenForm.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 12));
         btnOpenForm.setForeground(UITheme.TEXT_PRIMARY);
         btnOpenForm.setBackground(UITheme.ACCENT_RED);
@@ -102,9 +102,9 @@ public class ReportIncidentPanel extends JPanel {
         bar.setBackground(new Color(10, 14, 22, 200));
         bar.setBorder(BorderFactory.createLineBorder(UITheme.BORDER, 1, true));
 
-        JButton btnOut = zBtn("−");
+        JButton btnOut = zBtn("-");
         JButton btnIn  = zBtn("+");
-        JButton btnRst = zBtn("⊙");
+        JButton btnRst = zBtn("o");
         lblZoom = new JLabel("100%");
         lblZoom.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 10));
         lblZoom.setForeground(UITheme.TEXT_SECONDARY);
@@ -155,7 +155,7 @@ public class ReportIncidentPanel extends JPanel {
         sub.setFont(UITheme.FONT_BODY);
         sub.setForeground(UITheme.TEXT_SECONDARY);
 
-        JButton btnClose = new JButton("✕");
+        JButton btnClose = new JButton("X");
         btnClose.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 14));
         btnClose.setForeground(UITheme.TEXT_SECONDARY);
         btnClose.setBackground(new Color(40, 20, 20));
@@ -192,9 +192,7 @@ public class ReportIncidentPanel extends JPanel {
         tfSearch.setBackground(UITheme.BG_DARK);
         tfSearch.setForeground(UITheme.TEXT_MUTED);
         tfSearch.setCaretColor(UITheme.ACCENT);
-        tfSearch.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(UITheme.BORDER, 1, true),
-            BorderFactory.createEmptyBorder(5, 8, 5, 8)));
+        tfSearch.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
         tfSearch.setText("Cari alamat/bangunan...");
         tfSearch.addFocusListener(new java.awt.event.FocusAdapter() {
             @Override public void focusGained(java.awt.event.FocusEvent e) {
@@ -242,15 +240,26 @@ public class ReportIncidentPanel extends JPanel {
         row = addField(form, gc, row, "Koordinat Lokasi", tfMapCoord);
 
         // Alamat (read-only, diisi oleh geocoding — truncate + click to expand)
-        lblAddress = new JLabel("Klik peta untuk deteksi alamat...");
+        lblAddress = new JLabel("Klik peta untuk deteksi alamat...") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2.setColor(UITheme.BORDER);
+                g2.setStroke(new BasicStroke(1.0f));
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 12, 12);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         lblAddress.setFont(UITheme.FONT_BODY);
         lblAddress.setForeground(UITheme.TEXT_SECONDARY);
         lblAddress.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         lblAddress.setToolTipText("Klik untuk memperluas/memperkecil alamat");
-        lblAddress.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(UITheme.BORDER, 1, true),
-            BorderFactory.createEmptyBorder(5, 8, 5, 8)));
-        lblAddress.setOpaque(true);
+        lblAddress.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        lblAddress.setOpaque(false);
         lblAddress.setBackground(UITheme.BG_DARK);
         addressExpanded = false;
         lblAddress.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -400,7 +409,7 @@ public class ReportIncidentPanel extends JPanel {
 
         showNotification(String.format("%.5f, %.5f", mapLat, mapLon));
         lblResult.setForeground(UITheme.SUCCESS);
-        lblResult.setText("✓ Laporan terkirim!");
+        lblResult.setText("Laporan terkirim!");
         reset();
     }
 
@@ -493,23 +502,37 @@ public class ReportIncidentPanel extends JPanel {
         f.setBackground(UITheme.BG_DARK);
         f.setForeground(UITheme.TEXT_PRIMARY);
         f.setCaretColor(UITheme.ACCENT);
-        f.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(UITheme.BORDER, 1, true),
-            BorderFactory.createEmptyBorder(5, 8, 5, 8)));
+        f.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
         return f;
     }
 
     private JTextArea ta(int rows) {
-        JTextArea a = new JTextArea(rows, 0);
+        JTextArea a = new JTextArea(rows, 0) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2.setColor(hasFocus() ? UITheme.ACCENT : UITheme.BORDER);
+                g2.setStroke(new BasicStroke(1.5f));
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 12, 12);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        a.setOpaque(false);
         a.setFont(UITheme.FONT_BODY);
         a.setBackground(UITheme.BG_DARK);
         a.setForeground(UITheme.TEXT_PRIMARY);
         a.setCaretColor(UITheme.ACCENT);
         a.setLineWrap(true);
         a.setWrapStyleWord(true);
-        a.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(UITheme.BORDER, 1, true),
-            BorderFactory.createEmptyBorder(5, 8, 5, 8)));
+        a.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        a.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override public void focusGained(java.awt.event.FocusEvent e) { a.repaint(); }
+            @Override public void focusLost(java.awt.event.FocusEvent e) { a.repaint(); }
+        });
         return a;
     }
 
@@ -693,7 +716,7 @@ public class ReportIncidentPanel extends JPanel {
                             sidebarPanel.setVisible(true);
 
                         lblResult.setForeground(UITheme.SUCCESS);
-                        lblResult.setText("✓ Ditemukan: " + query);
+                        lblResult.setText("Ditemukan: " + query);
                     });
                 } else {
                     SwingUtilities.invokeLater(() -> {

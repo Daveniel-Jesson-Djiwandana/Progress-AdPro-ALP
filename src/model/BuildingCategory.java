@@ -6,9 +6,9 @@ package model;
  */
 public enum BuildingCategory {
 
-    BANGUNAN   ("Bangunan",     "🏢"),
-    INDUSTRI   ("Industri",     "🏭"),
-    LAHAN_KOSONG("Lahan Kosong", "🌿");
+    BANGUNAN   ("Bangunan",     ""),
+    INDUSTRI   ("Industri",     ""),
+    LAHAN_KOSONG("Lahan Kosong", "");
 
     private final String label;
     private final String icon;
@@ -22,7 +22,7 @@ public enum BuildingCategory {
     public String getIcon()  { return icon; }
 
     @Override
-    public String toString() { return icon + " " + label; }
+    public String toString() { return label; }
 
     /** Subtipe bangunan/lahan yang tersedia untuk kategori ini */
     public String[] getSubTypes() {

@@ -13,7 +13,7 @@ public class RoundedButton extends JButton {
     private Color hoverBackgroundColor;
     private Color pressedBackgroundColor;
     private Color currentDisplayColor;
-    private final int cornerRadius = 6;
+    private final int cornerRadius = 12;
 
     
     public RoundedButton(String buttonText, Color initialColor) {

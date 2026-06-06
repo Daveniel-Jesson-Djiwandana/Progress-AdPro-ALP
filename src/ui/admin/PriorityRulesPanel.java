@@ -185,9 +185,9 @@ public class PriorityRulesPanel extends JPanel {
 
         JLabel infoDesc = new JLabel("<html>Sistem menggunakan <b>Priority Queue</b> "
                 + "untuk mengurutkan insiden. Skor dihitung: "
-                + "<b>Score = (bobotKorban × jumlah_korban) + (bobotArea × luas/10) + (bobotIntensitas × intensitas)</b>. "
+                + "<b>Score = (bobotKorban * jumlah_korban) + (bobotArea * luas/10) + (bobotIntensitas * intensitas)</b>. "
                 + "Insiden dengan skor tertinggi diprioritaskan. Jumlah truk yang dikirim "
-                + "ditentukan otomatis: ≥100→4 truk, ≥60→3, ≥30→2, lainnya→1.</html>");
+                + "ditentukan otomatis: >=100 -> 4 truk, >=60 -> 3, >=30 -> 2, lainnya -> 1.</html>");
         infoDesc.setFont(UITheme.FONT_SMALL);
         infoDesc.setForeground(UITheme.TEXT_SECONDARY);
 
@@ -276,7 +276,7 @@ public class PriorityRulesPanel extends JPanel {
         double score = (vw * SAMPLE_VICTIMS) + (aw * SAMPLE_AREA / 10.0) + (iw * SAMPLE_INTENSITY);
 
         lblFormula.setText(String.format(
-                "<html><code>Score = (%.1f × %d) + (%.1f × %.0f/10) + (%.1f × %d)</code></html>",
+                "<html><code>Score = (%.1f * %d) + (%.1f * %.0f/10) + (%.1f * %d)</code></html>",
                 vw, SAMPLE_VICTIMS, aw, SAMPLE_AREA, iw, SAMPLE_INTENSITY));
 
         lblPreviewScore.setText(String.format("Skor: %.1f", score));
@@ -308,7 +308,7 @@ public class PriorityRulesPanel extends JPanel {
                         + "Bobot Area: " + String.format("%.1f", rules.getAreaWeight()) + "<br>"
                         + "Bobot Intensitas: " + String.format("%.1f", rules.getIntensityWeight()) + "<br>"
                         + "<br>Antrian insiden telah diperbarui.</html>",
-                "Aturan Disimpan ✓", JOptionPane.INFORMATION_MESSAGE);
+                "Aturan Disimpan", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void resetRules() {
@@ -319,6 +319,6 @@ public class PriorityRulesPanel extends JPanel {
         JOptionPane.showMessageDialog(this,
                 "<html><b>Aturan prioritas telah direset ke default!</b><br>"
                         + "Korban: 10.0 | Area: 0.5 | Intensitas: 5.0</html>",
-                "Reset Berhasil ✓", JOptionPane.INFORMATION_MESSAGE);
+                "Reset Berhasil", JOptionPane.INFORMATION_MESSAGE);
     }
 }

@@ -123,9 +123,7 @@ public class RegisterScreen extends JPanel {
         field.setBackground(UITheme.BG_SURFACE);
         field.setForeground(UITheme.TEXT_PRIMARY);
         field.setCaretColor(UITheme.ACCENT_ORANGE);
-        field.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(UITheme.BORDER, 1, true),
-                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+        field.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
         field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         field.setAlignmentX(CENTER_ALIGNMENT);
     }

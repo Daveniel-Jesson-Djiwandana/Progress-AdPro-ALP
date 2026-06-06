@@ -5,6 +5,7 @@ import model.Incident;
 import model.IncidentSeverity;
 import model.IncidentStatus;
 import ui.UITheme;
+import ui.components.RoundedPanel;
 import ui.components.StatusBadge;
 import ui.components.VectorIcon;
 
@@ -68,13 +69,12 @@ public class ViewStatusPanel extends JPanel {
         header.add(btnRefresh, BorderLayout.EAST);
 
         // Info banner
-        JPanel infoBanner = new JPanel(new BorderLayout());
-        infoBanner.setBackground(UITheme.BG_CARD);
-        infoBanner.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(UITheme.BORDER, 1, true),
-            BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+        RoundedPanel infoBanner = new RoundedPanel(UITheme.BG_CARD, 12);
+        infoBanner.setLayout(new BorderLayout());
+        infoBanner.setHasBorder(true);
+        infoBanner.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
         JLabel infoText = new JLabel(
-            "<html>ℹ  Halaman ini menampilkan status semua laporan kebakaran aktif. " +
+            "<html>Halaman ini menampilkan status semua laporan kebakaran aktif. " +
             "Status diperbarui secara real-time oleh petugas pemadam kebakaran.</html>");
         infoText.setFont(UITheme.FONT_SMALL);
         infoText.setForeground(UITheme.TEXT_SECONDARY);

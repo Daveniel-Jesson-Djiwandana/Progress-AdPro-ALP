@@ -20,12 +20,12 @@ public class RoundedPanel extends JPanel {
 
     
     public RoundedPanel(Color backgroundColor) {
-        this(backgroundColor, 8);
+        this(backgroundColor, 12);
     }
 
     
     public RoundedPanel() {
-        this(UITheme.BG_CARD, 8);
+        this(UITheme.BG_CARD, 12);
     }
 
     

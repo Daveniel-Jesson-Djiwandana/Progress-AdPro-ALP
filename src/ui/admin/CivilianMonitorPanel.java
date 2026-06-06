@@ -314,7 +314,7 @@ public class CivilianMonitorPanel extends JPanel {
             inc.setVictimsCritical(0);
             inc.setVictimsInjured(0);
             inc.setVictimsEvacuated(0);
-            JOptionPane.showMessageDialog(this, "Semua korban berhasil dievakuasi dan diamankan!", "Sukses ✓", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Semua korban berhasil dievakuasi dan diamankan!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
             refresh();
         } else {
             info("Semua korban sudah aman.");

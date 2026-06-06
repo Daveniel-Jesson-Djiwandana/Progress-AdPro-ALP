@@ -161,7 +161,7 @@ public class OsmCityMapPanel extends JPanel {
                         int dy = e.getY() - p.y;
                         if (dx * dx + dy * dy <= 12 * 12) {
                             map.setToolTipText("<html><body style='font-family:sans-serif; font-size:11px; padding:3px;'>"
-                                + "<b>🚒 " + marker.getStation().getName() + "</b><br>"
+                                + "<b>Pos Damkar: " + marker.getStation().getName() + "</b><br>"
                                 + "Rayon: " + marker.getStation().getRayon() + " ("
                                 + (marker.getStation().isInduk() ? "Pos Induk" : "Pos Pembantu") + ")<br>"
                                 + "Truk Standby: <b>" + marker.getStation().getAvailableTruckCount() + "</b> unit"
@@ -179,7 +179,7 @@ public class OsmCityMapPanel extends JPanel {
                             int dy = e.getY() - p.y;
                             if (dx * dx + dy * dy <= 15 * 15) {
                                 map.setToolTipText("<html><body style='font-family:sans-serif; font-size:11px; padding:3px;'>"
-                                    + "<b>🚨 Insiden " + marker.getIncident().getIncidentId() + "</b><br>"
+                                    + "<b>Insiden " + marker.getIncident().getIncidentId() + "</b><br>"
                                     + marker.getIncident().getLocation().replaceAll("\\[.*?\\]","").trim() + "<br>"
                                     + "Status: " + marker.getIncident().getStatus() + "<br>"
                                     + "Keparahan: <font color='#FF5555'><b>" + marker.getIncident().getSeverity() + "</b></font>"

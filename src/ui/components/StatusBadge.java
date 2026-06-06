@@ -37,17 +37,17 @@ public class StatusBadge extends JLabel {
         }
         switch (sev) {
             case RED:
-                color = new Color(0xd9, 0x6f, 0x1e); // Orange-Red for Red
+                color = UITheme.WARNING; // Vibrant Amber Orange for Red
                 break;
             case DOUBLE_RED:
-                color = new Color(0xb8, 0x1c, 0x1c); // Strong Red for Double Red
+                color = UITheme.ACCENT;  // Vibrant Emergency Red for Double Red
                 break;
             case TRIPLE_RED:
-                color = new Color(0xff, 0x00, 0x00); // Flashy Pure Red for Triple Red
+                color = new Color(255, 59, 48); // High contrast Apple Red for Triple Red
                 break;
             case UNDETERMINED:
             default:
-                color = new Color(100, 100, 100); // Neutral grey for Undetermined
+                color = new Color(100, 116, 139); // Slate-500 for Undetermined
                 break;
         }
         return new StatusBadge(sev.getLabel(), color);
@@ -81,7 +81,7 @@ public class StatusBadge extends JLabel {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setColor(bg);
-        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
+        g2.fillRoundRect(0, 0, getWidth(), getHeight(), getHeight(), getHeight());
         g2.dispose();
         super.paintComponent(g);
     }

@@ -11,6 +11,7 @@ C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\model\DispatchPriorityR
 C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\model\FireStation.java
 C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\model\FireStationGraph.java
 C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\model\Firetruck.java
+C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\model\FiretruckType.java
 C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\model\Incident.java
 C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\model\IncidentSeverity.java
 C:\Users\alber\OneDrive\Documents\Progress-AdPro-ALP\src\model\IncidentStatus.java
