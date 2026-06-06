@@ -82,21 +82,21 @@ public class Incident implements Comparable<Incident> {
         for (int i = 0; i < count; i++) {
             int roll = rng.nextInt(100);
             switch (severity) {
-                case CRITICAL:
+                case TRIPLE_RED:
                     if (roll < 40)       victimsCritical++;
                     else if (roll < 70)  victimsInjured++;
                     else                 victimsSafe++;
                     break;
-                case HIGH:
-                    if (roll < 20)       victimsCritical++;
-                    else if (roll < 55)  victimsInjured++;
+                case DOUBLE_RED:
+                    if (roll < 10)       victimsCritical++;
+                    else if (roll < 45)  victimsInjured++;
                     else                 victimsSafe++;
                     break;
-                case MEDIUM:
-                    if (roll < 5)        victimsCritical++;
-                    else if (roll < 30)  victimsInjured++;
+                case RED:
+                    if (roll < 15)       victimsInjured++;
                     else                 victimsSafe++;
                     break;
+                case UNDETERMINED:
                 default:
                     if (roll < 10)       victimsInjured++;
                     else                 victimsSafe++;
@@ -106,9 +106,28 @@ public class Incident implements Comparable<Incident> {
     }
 
     public void calculatePriorityScore(double victimWeight, double areaWeight, double intensityWeight) {
-        this.priorityScore  = (victimWeight  * structure.getCivilianCount())
-                            + (areaWeight    * structure.getArea() / 10.0)
-                            + (intensityWeight * fireIntensity);
+        double score = 0.0;
+        if (buildingCategory == BuildingCategory.BANGUNAN) {
+            // Bangunan: prioritas utama cari korban
+            score = (victimWeight * 1.5 * structure.getCivilianCount())
+                  + (areaWeight * structure.getArea() / 10.0)
+                  + (intensityWeight * fireIntensity);
+        } else if (buildingCategory == BuildingCategory.INDUSTRI) {
+            // Industri: bahan berbahaya
+            score = (victimWeight * structure.getCivilianCount())
+                  + (areaWeight * structure.getArea() / 10.0)
+                  + (intensityWeight * 1.5 * fireIntensity);
+        } else if (buildingCategory == BuildingCategory.LAHAN_KOSONG) {
+            // Lahan Kosong: area luas, api menyebar
+            score = (victimWeight * structure.getCivilianCount())
+                  + (areaWeight * 2.0 * structure.getArea() / 10.0)
+                  + (intensityWeight * fireIntensity);
+        } else {
+            score = (victimWeight * structure.getCivilianCount())
+                  + (areaWeight * structure.getArea() / 10.0)
+                  + (intensityWeight * fireIntensity);
+        }
+        this.priorityScore = score;
         this.priority_level = (int) priorityScore;
     }
 
@@ -167,6 +186,7 @@ public class Incident implements Comparable<Incident> {
     public LocalDateTime   getFireStartTime()       { return fire_start_time; }
     public int             getPriorityLevel()       { return priority_level; }
     public IncidentSeverity getSeverity()           { return severity; }
+    public void            setSeverity(IncidentSeverity s) { this.severity = s; }
     public String          getDescription()         { return description; }
     public int             getFireIntensity()       { return fireIntensity; }
     public IncidentStatus  getStatus()              { return status; }

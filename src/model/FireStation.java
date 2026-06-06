@@ -7,14 +7,18 @@ public class FireStation {
     private String address;
     private double latitude;
     private double longitude;
+    private String rayon;     // Pusat, Timur, Utara, Barat, Selatan
+    private boolean isInduk;  // Pos Induk vs Pos Pembantu
     private ArrayList<Admin> employees;    // required data structure
     private ArrayList<Firetruck> firetrucks; // required data structure
 
-    public FireStation(String name, String address, double latitude, double longitude) {
+    public FireStation(String name, String address, double latitude, double longitude, String rayon, boolean isInduk) {
         this.name = name;
         this.address = address;
         this.latitude = latitude;
         this.longitude = longitude;
+        this.rayon = rayon;
+        this.isInduk = isInduk;
         this.employees = new ArrayList<>();
         this.firetrucks = new ArrayList<>();
     }
@@ -26,6 +30,8 @@ public class FireStation {
     public String getAddress()                   { return address; }
     public double getLatitude()                  { return latitude; }
     public double getLongitude()                 { return longitude; }
+    public String getRayon()                     { return rayon; }
+    public boolean isInduk()                     { return isInduk; }
     public ArrayList<Admin> getEmployees()       { return employees; }
     public ArrayList<Firetruck> getFiretrucks()  { return firetrucks; }
 

@@ -241,13 +241,37 @@ public class AutoFirePanel extends JPanel {
 
         // 1. Drain resources of deployed trucks
         ArrayList<model.Firetruck> stationTrucks = database.Database.getFireStation().getFiretrucks();
+        
+        // Count deployed supply trucks (Tipe 5 - Supply Air)
+        int deployedSupplyTrucks = 0;
+        for (model.Firetruck truck : stationTrucks) {
+            if (truck.getStatus() == model.TruckStatus.DEPLOYED && truck.getType() == model.FiretruckType.TYPE_5_WATER_SUPPLY) {
+                deployedSupplyTrucks++;
+            }
+        }
+
         for (model.Firetruck truck : stationTrucks) {
             if (truck.getStatus() == model.TruckStatus.DEPLOYED) {
                 // Deployed truck consumes water and fuel
                 int waterDrain = 300; // liters per tick
+                
+                // Sistem Rotasi Air:
+                // Tipe 5 (Supply Air) di belakang terus mencari sumber air & menyuplai unit depan
+                if (truck.getType() == model.FiretruckType.TYPE_5_WATER_SUPPLY) {
+                    waterDrain = 0; // Supply air mencari air eksternal, airnya sendiri stabil/tidak terkuras habis
+                } else if (deployedSupplyTrucks > 0) {
+                    waterDrain = 50; // Konsumsi air unit depan melambat karena dibantu supply
+                }
+                
                 int fuelDrain = 4;    // percent per tick
                 
                 int nextWater = Math.max(0, truck.getCurrentWater() - waterDrain);
+                
+                // Transfer air dari unit supply (Tipe 5) ke unit depan
+                if (deployedSupplyTrucks > 0 && truck.getType() != model.FiretruckType.TYPE_5_WATER_SUPPLY) {
+                    nextWater = Math.min(truck.getWaterCapacity(), nextWater + 150);
+                }
+                
                 int nextFuel  = Math.max(0, truck.getFuelLevel() - fuelDrain);
                 
                 truck.setCurrentWater(nextWater);

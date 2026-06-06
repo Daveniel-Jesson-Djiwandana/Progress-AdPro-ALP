@@ -6,11 +6,9 @@ package model;
  */
 public enum BuildingCategory {
 
-    HUNIAN     ("Hunian",       "🏠"),
-    KOMERSIAL  ("Komersial",    "🏪"),
-    FASUM      ("Fasum / Fasos","🏫"),
+    BANGUNAN   ("Bangunan",     "🏢"),
     INDUSTRI   ("Industri",     "🏭"),
-    INFRASTRUKTUR("Infrastruktur","🚉");
+    LAHAN_KOSONG("Lahan Kosong", "🌿");
 
     private final String label;
     private final String icon;
@@ -26,29 +24,20 @@ public enum BuildingCategory {
     @Override
     public String toString() { return icon + " " + label; }
 
-    /** Subtipe bangunan yang tersedia untuk kategori ini */
+    /** Subtipe bangunan/lahan yang tersedia untuk kategori ini */
     public String[] getSubTypes() {
         switch (this) {
-            case HUNIAN:
+            case BANGUNAN:
                 return new String[]{
-                    "Rumah tinggal", "Kos / kontrakan", "Apartemen / rusun"
-                };
-            case KOMERSIAL:
-                return new String[]{
-                    "Ruko", "Toko", "Pasar", "Mall", "Restoran / kafe", "Hotel"
-                };
-            case FASUM:
-                return new String[]{
-                    "Sekolah / kampus", "Rumah sakit / klinik",
-                    "Tempat ibadah", "Gedung pemerintah"
+                    "Rumah tinggal", "Sekolah / Kampus", "Gedung Kantor", "Mall / Ruko", "Lainnya"
                 };
             case INDUSTRI:
                 return new String[]{
-                    "Pabrik", "Gudang", "Bengkel", "Gedung perkantoran"
+                    "Pabrik", "Gudang Bahan Kimia", "Gudang Plastik", "Gudang Minyak", "Bengkel", "Lainnya"
                 };
-            case INFRASTRUKTUR:
+            case LAHAN_KOSONG:
                 return new String[]{
-                    "Stasiun / terminal", "Jembatan", "Pelabuhan / bandara"
+                    "Lahan Alang-alang", "Hutan Kota", "Kebun / Sawah", "Lahan Kosong Terbuka", "Lainnya"
                 };
             default:
                 return new String[]{"Lainnya"};

@@ -37,15 +37,28 @@ public class DispatchPanel extends JPanel {
 
     private JLabel     lblRecVal;
     private JTextField tfNotes;
+    private JSpinner   spTrucksToDispatch;
 
     private JPanel    detailOverlay;
-    private JTextArea taDetail;
+    private JLabel    lblDetail;        // HTML label replaces JTextArea for truncation
+    private boolean   detailExpanded;   // toggled by click
     private JLabel    lblDetailTitle;
 
     // Admin building-detail fields
+    private JComboBox<IncidentSeverity> cbSeverityAdmin;
     private JComboBox<BuildingMaterial> cbMaterial;
     private JComboBox<DamageLevel>      cbDamage;
+    private JSpinner                    spCriticalAdmin;
+    private JSpinner                    spInjuredAdmin;
+    private JSpinner                    spEvacuatedAdmin;
+    private JSpinner                    spSafeAdmin;
     private JLabel                      lblBuildingInfo;
+    private JSpinner                    spAreaAdmin;       // Luas area — admin only (Lahan Kosong)
+    private JPanel                      areaAdminPanel;    // wrapper to show/hide
+
+    // Filter dropdowns
+    private JComboBox<String>           cbFilterCategory;
+    private JComboBox<String>           cbFilterSeverity;
 
     private OsmCityMapPanel mapPanel;
     private JLayeredPane layers;
@@ -239,6 +252,25 @@ public class DispatchPanel extends JPanel {
         filterPanel.add(btnInRadius);
         filterPanel.add(btnAllIncidents);
 
+        // Filter Kategori Bangunan
+        cbFilterCategory = new JComboBox<>(new String[]{"Semua Kategori", "Bangunan", "Industri", "Lahan Kosong"});
+        cbFilterCategory.setFont(UITheme.FONT_SMALL);
+        cbFilterCategory.setBackground(UITheme.BG_SURFACE);
+        cbFilterCategory.setForeground(UITheme.TEXT_PRIMARY);
+        cbFilterCategory.addActionListener(e -> refresh());
+
+        // Filter Tingkat Keparahan
+        cbFilterSeverity = new JComboBox<>(new String[]{"Semua Keparahan", "Undetermined", "Red", "Double Red", "Triple Red"});
+        cbFilterSeverity.setFont(UITheme.FONT_SMALL);
+        cbFilterSeverity.setBackground(UITheme.BG_SURFACE);
+        cbFilterSeverity.setForeground(UITheme.TEXT_PRIMARY);
+        cbFilterSeverity.addActionListener(e -> refresh());
+
+        JPanel filterRow2 = new JPanel(new GridLayout(1, 2, 4, 0));
+        filterRow2.setOpaque(false);
+        filterRow2.add(cbFilterCategory);
+        filterRow2.add(cbFilterSeverity);
+
         JButton btnRefresh = new JButton("⟳ Perbarui");
         btnRefresh.setFont(UITheme.FONT_SMALL);
         btnRefresh.setForeground(UITheme.ACCENT_ORANGE);
@@ -254,6 +286,8 @@ public class DispatchPanel extends JPanel {
         header.add(lblTrucks);
         header.add(Box.createVerticalStrut(8));
         header.add(filterPanel);
+        header.add(Box.createVerticalStrut(4));
+        header.add(filterRow2);
         header.add(Box.createVerticalStrut(6));
         header.add(btnRefresh);
 
@@ -337,12 +371,19 @@ public class DispatchPanel extends JPanel {
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
         p.setBorder(new EmptyBorder(12, 16, 16, 16));
 
-        JLabel lbl1 = sLbl("Rekomendasi Kendaraan:");
+        JLabel lblRec = sLbl("Rekomendasi Truk:");
         lblRecVal = new JLabel("Pilih insiden...");
         lblRecVal.setFont(new Font("SansSerif", Font.BOLD, 14));
         lblRecVal.setForeground(UITheme.ACCENT_ORANGE);
         lblRecVal.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
         lblRecVal.setAlignmentX(LEFT_ALIGNMENT);
+
+        JLabel lbl1 = sLbl("Jumlah Unit Dikirim:");
+        spTrucksToDispatch = new JSpinner(new SpinnerNumberModel(1, 1, 20, 1));
+        spTrucksToDispatch.setFont(UITheme.FONT_BODY);
+        ((JSpinner.DefaultEditor) spTrucksToDispatch.getEditor()).getTextField().setForeground(UITheme.TEXT_PRIMARY);
+        spTrucksToDispatch.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        spTrucksToDispatch.setAlignmentX(LEFT_ALIGNMENT);
 
         JLabel lbl2 = sLbl("Catatan penyelesaian:");
         tfNotes = new JTextField("Kebakaran berhasil dipadamkan.");
@@ -368,9 +409,13 @@ public class DispatchPanel extends JPanel {
         btnResolve.setAlignmentX(LEFT_ALIGNMENT);
         btnResolve.addActionListener(e -> resolve());
 
-        p.add(lbl1);
+        p.add(lblRec);
         p.add(Box.createVerticalStrut(4));
         p.add(lblRecVal);
+        p.add(Box.createVerticalStrut(8));
+        p.add(lbl1);
+        p.add(Box.createVerticalStrut(4));
+        p.add(spTrucksToDispatch);
         p.add(Box.createVerticalStrut(8));
         p.add(btnDispatch);
         p.add(Box.createVerticalStrut(10));
@@ -414,19 +459,27 @@ public class DispatchPanel extends JPanel {
         detailHeader.add(lblDetailTitle, BorderLayout.WEST);
         detailHeader.add(btnClose,       BorderLayout.EAST);
 
-        // ── Teks detail insiden (read-only) ────────────────────────────────────
-        taDetail = new JTextArea();
-        taDetail.setFont(UITheme.FONT_MONO);
-        taDetail.setBackground(new Color(0, 0, 0, 0));
-        taDetail.setForeground(UITheme.TEXT_PRIMARY);
-        taDetail.setEditable(false);
-        taDetail.setOpaque(false);
-        taDetail.setBorder(new EmptyBorder(10, 14, 6, 14));
+        // ── Detail info (HTML JLabel — supports truncation & click-to-expand) ──
+        lblDetail = new JLabel();
+        lblDetail.setFont(UITheme.FONT_MONO);
+        lblDetail.setForeground(UITheme.TEXT_PRIMARY);
+        lblDetail.setVerticalAlignment(SwingConstants.TOP);
+        lblDetail.setBorder(new EmptyBorder(10, 14, 6, 14));
+        lblDetail.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        lblDetail.setToolTipText("Klik untuk memperluas/memperkecil detail alamat");
+        detailExpanded = false;
+        lblDetail.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                detailExpanded = !detailExpanded;
+                updateDetail(); // re-render with new truncation state
+            }
+        });
 
-        JScrollPane detailScroll = new JScrollPane(taDetail);
+        JScrollPane detailScroll = new JScrollPane(lblDetail);
         detailScroll.setOpaque(false);
         detailScroll.getViewport().setOpaque(false);
         detailScroll.setBorder(null);
+        detailScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         detailScroll.getVerticalScrollBar().setUnitIncrement(10);
 
         // ── Info bangunan dari pelapor ──────────────────────────────────────
@@ -442,12 +495,35 @@ public class DispatchPanel extends JPanel {
         adminForm.setBorder(new EmptyBorder(6, 14, 14, 14));
 
         // Separator
-        JLabel sep = new JLabel("───  Detail Bangunan (diisi Admin)  ───");
+        JLabel sep = new JLabel("───  Laporan Lapangan (Admin)  ───");
         sep.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 10));
         sep.setForeground(UITheme.ACCENT_ORANGE);
         sep.setAlignmentX(LEFT_ALIGNMENT);
         adminForm.add(sep);
         adminForm.add(Box.createVerticalStrut(8));
+
+        // Kode Kebakaran / Severity
+        adminForm.add(adminLbl("🚨 Kode Kebakaran (Keparahan):"));
+        adminForm.add(Box.createVerticalStrut(3));
+        cbSeverityAdmin = new JComboBox<>(IncidentSeverity.values());
+        cbSeverityAdmin.setBackground(UITheme.BG_CARD);
+        cbSeverityAdmin.setForeground(UITheme.TEXT_PRIMARY);
+        cbSeverityAdmin.setFont(UITheme.FONT_SMALL);
+        cbSeverityAdmin.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        cbSeverityAdmin.setAlignmentX(LEFT_ALIGNMENT);
+        cbSeverityAdmin.setRenderer(new DefaultListCellRenderer() {
+            @Override public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f) {
+                super.getListCellRendererComponent(l, v, i, s, f);
+                if (v instanceof IncidentSeverity) {
+                    setText(((IncidentSeverity) v).getLabel());
+                }
+                setBackground(s ? UITheme.ACCENT : UITheme.BG_CARD);
+                setForeground(UITheme.TEXT_PRIMARY);
+                return this;
+            }
+        });
+        adminForm.add(cbSeverityAdmin);
+        adminForm.add(Box.createVerticalStrut(10));
 
         // Material dominan
         adminForm.add(adminLbl("🧱 Material Dominan:"));
@@ -497,8 +573,46 @@ public class DispatchPanel extends JPanel {
         adminForm.add(cbDamage);
         adminForm.add(Box.createVerticalStrut(10));
 
+        // Korban aktual
+        adminForm.add(adminLbl("👥 Korban Aktual (Cek Lapangan):"));
+        adminForm.add(Box.createVerticalStrut(3));
+        JPanel victimsGrid = new JPanel(new GridLayout(2, 2, 6, 6));
+        victimsGrid.setOpaque(false);
+        victimsGrid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+        victimsGrid.setAlignmentX(LEFT_ALIGNMENT);
+
+        spCriticalAdmin = new JSpinner(new SpinnerNumberModel(0, 0, 999, 1));
+        spInjuredAdmin = new JSpinner(new SpinnerNumberModel(0, 0, 999, 1));
+        spEvacuatedAdmin = new JSpinner(new SpinnerNumberModel(0, 0, 999, 1));
+        spSafeAdmin = new JSpinner(new SpinnerNumberModel(0, 0, 999, 1));
+
+        victimsGrid.add(createLabeledSpinner("Kritis:", spCriticalAdmin));
+        victimsGrid.add(createLabeledSpinner("Luka-luka:", spInjuredAdmin));
+        victimsGrid.add(createLabeledSpinner("Dievakuasi:", spEvacuatedAdmin));
+        victimsGrid.add(createLabeledSpinner("Aman:", spSafeAdmin));
+        
+        adminForm.add(victimsGrid);
+        adminForm.add(Box.createVerticalStrut(10));
+
+        // ── Luas Area (hanya untuk Lahan Kosong — diisi petugas di lapangan) ──
+        areaAdminPanel = new JPanel();
+        areaAdminPanel.setOpaque(false);
+        areaAdminPanel.setLayout(new BoxLayout(areaAdminPanel, BoxLayout.Y_AXIS));
+        areaAdminPanel.setAlignmentX(LEFT_ALIGNMENT);
+        areaAdminPanel.add(adminLbl("📐 Luas Area Terbakar (m²) — Observasi Lapangan:"));
+        areaAdminPanel.add(Box.createVerticalStrut(3));
+        spAreaAdmin = new JSpinner(new SpinnerNumberModel(0, 0, 99999, 10));
+        spAreaAdmin.setFont(UITheme.FONT_SMALL);
+        ((JSpinner.DefaultEditor) spAreaAdmin.getEditor()).getTextField().setForeground(UITheme.TEXT_PRIMARY);
+        spAreaAdmin.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        spAreaAdmin.setAlignmentX(LEFT_ALIGNMENT);
+        areaAdminPanel.add(spAreaAdmin);
+        areaAdminPanel.setVisible(false); // hidden by default, shown only for LAHAN_KOSONG
+        adminForm.add(areaAdminPanel);
+        adminForm.add(Box.createVerticalStrut(12));
+
         // Tombol simpan
-        RoundedButton btnSave = new RoundedButton("  Simpan Detail Bangunan", UITheme.ACCENT_ORANGE);
+        RoundedButton btnSave = new RoundedButton("  Simpan Laporan Lapangan", UITheme.ACCENT_ORANGE);
         btnSave.setFont(UITheme.FONT_SMALL);
         btnSave.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
         btnSave.setAlignmentX(LEFT_ALIGNMENT);
@@ -514,7 +628,7 @@ public class DispatchPanel extends JPanel {
         adminScroll.setOpaque(false);
         adminScroll.getViewport().setOpaque(false);
         adminScroll.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, UITheme.BORDER));
-        adminScroll.setPreferredSize(new Dimension(0, 220));
+        adminScroll.setPreferredSize(new Dimension(0, 320));
 
         panel.add(detailHeader, BorderLayout.NORTH);
         panel.add(centerPanel,  BorderLayout.CENTER);
@@ -595,16 +709,32 @@ public class DispatchPanel extends JPanel {
 
         lblDetailTitle.setText("Detail: " + inc.getIncidentId() + "  [P" + (row+1) + "]");
 
+        // Build HTML detail — with truncation support for the address line
+        String location = inc.getLocation();
+        String displayLoc;
+        int MAX_LOC_LEN = 50;
+        if (!detailExpanded && location.length() > MAX_LOC_LEN) {
+            displayLoc = htmlEscape(location.substring(0, MAX_LOC_LEN)) + "…";
+        } else {
+            displayLoc = htmlEscape(location);
+        }
+        String expandHint = (!detailExpanded && location.length() > MAX_LOC_LEN)
+            ? "  <i style='color:#FFB347'>(klik untuk lihat lengkap)</i>" : "";
+
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("%-13s: %s\n",  "ID",          inc.getIncidentId()));
-        sb.append(String.format("%-13s: %s\n",  "Lokasi",      inc.getLocation()));
-        sb.append(String.format("%-13s: %s  (Int: %d/10)\n",   "Tingkat", inc.getSeverity().getLabel(), inc.getFireIntensity()));
-        sb.append(String.format("%-13s: %d orang  |  %.0f m²\n","Korban+Luas", inc.getNumVictimsTrapped(), inc.getFireSpreadArea()));
-        sb.append(String.format("%-13s: %.1f  (Rek: %d truk)\n","Prioritas", inc.getPriorityScore(), inc.getRecommendedTrucks()));
-        sb.append(String.format("%-13s: %s  (%s berlalu)\n",   "Waktu",    inc.getFormattedTime(), inc.getFormattedDuration()));
-        sb.append(String.format("%-13s: %s\n",  "Pelapor",     inc.getReportedBy()));
-        sb.append(String.format("%-13s: %s\n",  "Deskripsi",   inc.getDescription()));
-        sb.append(String.format("%-13s: %d%%  (%d truk)\n",    "Progress", inc.getDispatchProgress(), inc.getTrucksAssigned()));
+        sb.append("<html><body style='width:300px; font-family:monospace; font-size:11px; color:#E0E0E0;'>");
+        sb.append(row("ID",           htmlEscape(inc.getIncidentId())));
+        sb.append(row("Lokasi",       displayLoc + expandHint));
+        sb.append(row("Tingkat",      htmlEscape(inc.getSeverity().getLabel()) + "  (Int: " + inc.getFireIntensity() + "/10)"));
+        sb.append(row("Korban",       inc.getNumVictimsTrapped() + " orang"));
+        if (inc.getFireSpreadArea() > 0) {
+            sb.append(row("Luas Area", String.format("%.0f m²", inc.getFireSpreadArea())));
+        }
+        sb.append(row("Prioritas",    String.format("%.1f  (Rek: %d truk)", inc.getPriorityScore(), inc.getRecommendedTrucks())));
+        sb.append(row("Waktu",        htmlEscape(inc.getFormattedTime()) + "  (" + htmlEscape(inc.getFormattedDuration()) + " berlalu)"));
+        sb.append(row("Pelapor",      htmlEscape(inc.getReportedBy())));
+        sb.append(row("Deskripsi",    htmlEscape(inc.getDescription())));
+        sb.append(row("Progress",     inc.getDispatchProgress() + "%  (" + inc.getTrucksAssigned() + " truk)"));
 
         // Dijkstra calculations to show pos terdekat
         double[] coords = FireStationGraph.parseGpsCoord(inc.getLocation());
@@ -639,23 +769,23 @@ public class DispatchPanel extends JPanel {
             graph.removeNode(incidentNode);
 
             if (closestStation != null) {
-                sb.append(String.format("%-13s: %s (%.2f km)\n", "Pos Terdekat", closestStation.getName(), minDist));
+                sb.append(row("Pos Terdekat", htmlEscape(closestStation.getName()) + " (" + String.format("%.2f", minDist) + " km)"));
             }
             if (adminStation != null && distToAdmin < Double.MAX_VALUE) {
-                sb.append(String.format("%-13s: %.2f km (%s)\n", "Jarak dari Pos", distToAdmin, (distToAdmin <= 5.0 ? "Dalam Radius" : "Luar Radius")));
+                sb.append(row("Jarak dari Pos", String.format("%.2f km (%s)", distToAdmin, (distToAdmin <= 5.0 ? "Dalam Radius" : "Luar Radius"))));
             }
         }
 
         if (inc.getNumVictimsTrapped() > 0) {
-            sb.append("\nKorban Terdampak:\n");
-            sb.append(String.format("  • Kritis      : %d orang\n", inc.getVictimsCritical()));
-            sb.append(String.format("  • Luka-luka   : %d orang\n", inc.getVictimsInjured()));
-            sb.append(String.format("  • Dievakuasi  : %d orang\n", inc.getVictimsEvacuated()));
-            sb.append(String.format("  • Aman        : %d orang\n", inc.getVictimsSafe()));
+            sb.append("<br><b>Korban Terdampak:</b><br>");
+            sb.append("&nbsp;&nbsp;• Kritis: " + inc.getVictimsCritical() + " orang<br>");
+            sb.append("&nbsp;&nbsp;• Luka-luka: " + inc.getVictimsInjured() + " orang<br>");
+            sb.append("&nbsp;&nbsp;• Dievakuasi: " + inc.getVictimsEvacuated() + " orang<br>");
+            sb.append("&nbsp;&nbsp;• Aman: " + inc.getVictimsSafe() + " orang<br>");
         }
 
-        taDetail.setText(sb.toString());
-        taDetail.setCaretPosition(0);
+        sb.append("</body></html>");
+        lblDetail.setText(sb.toString());
 
         // ── Tampilkan info bangunan dari pelapor ────────────────────────────
         String bldg = inc.getBuildingLabel();
@@ -666,10 +796,23 @@ public class DispatchPanel extends JPanel {
         }
 
         // Pre-fill admin form dari data yang sudah tersimpan (jika ada)
+        cbSeverityAdmin.setSelectedItem(inc.getSeverity());
+        spCriticalAdmin.setValue(inc.getVictimsCritical());
+        spInjuredAdmin.setValue(inc.getVictimsInjured());
+        spEvacuatedAdmin.setValue(inc.getVictimsEvacuated());
+        spSafeAdmin.setValue(inc.getVictimsSafe());
+
         if (inc.getBuildingMaterial() != null) cbMaterial.setSelectedItem(inc.getBuildingMaterial());
         else cbMaterial.setSelectedIndex(0);
         if (inc.getDamageLevel() != null) cbDamage.setSelectedItem(inc.getDamageLevel());
         else cbDamage.setSelectedIndex(0);
+
+        // Show/hide area admin field based on category
+        boolean isLahanKosong = inc.getBuildingCategory() == BuildingCategory.LAHAN_KOSONG;
+        areaAdminPanel.setVisible(isLahanKosong);
+        if (isLahanKosong) {
+            spAreaAdmin.setValue((int) inc.getFireSpreadArea());
+        }
 
         detailOverlay.setVisible(true);
 
@@ -693,12 +836,22 @@ public class DispatchPanel extends JPanel {
         if (inc == null) { warn("Pilih insiden terlebih dahulu."); return; }
         if (inc.getStatus() == IncidentStatus.RESOLVED) { info("Insiden ini sudah selesai."); return; }
 
-        int count = inc.getRecommendedTrucks();
-        int remaining = count;
-
+        int count = (int) spTrucksToDispatch.getValue();
         FireStation ownStation = Database.getFireStation();
         int ownAvailable = ownStation != null ? ownStation.getAvailableTruckCount() : 0;
-        int ownDispatch = Math.min(remaining, ownAvailable);
+
+        // Enforce guard rule: Saat triple red, selalu sisakan 1 regu jaga di pos
+        int ownAvailableLimit = ownAvailable;
+        if (inc.getSeverity() == IncidentSeverity.TRIPLE_RED) {
+            ownAvailableLimit = Math.max(0, ownAvailable - 1);
+            if (count > ownAvailableLimit && ownAvailable > 0 && ownAvailableLimit == 0) {
+                warn("Untuk status kebencanaan Triple Red, minimal 1 regu/kendaraan harus disisakan sebagai regu jaga di pos!");
+                return;
+            }
+        }
+
+        int ownDispatch = Math.min(count, ownAvailableLimit);
+        int remaining = count - ownDispatch;
 
         if (ownStation != null) {
             ArrayList<Firetruck> ownTrucks = ownStation.getAvailableTrucks();
@@ -706,7 +859,6 @@ public class DispatchPanel extends JPanel {
                 ownTrucks.get(i).setStatus(TruckStatus.DEPLOYED);
             }
         }
-        remaining -= ownDispatch;
 
         int backupDispatchCount = 0;
         StringBuilder backupInfo = new StringBuilder();
@@ -749,7 +901,11 @@ public class DispatchPanel extends JPanel {
             for (StationDistance sd : assistanceList) {
                 if (remaining <= 0) break;
                 int avail = sd.station.getAvailableTruckCount();
+                if (inc.getSeverity() == IncidentSeverity.TRIPLE_RED) {
+                    avail = Math.max(0, avail - 1); // Enforce 1 guard truck standby at assistance stations too
+                }
                 int take = Math.min(remaining, avail);
+                if (take <= 0) continue;
 
                 ArrayList<Firetruck> assistTrucks = sd.station.getAvailableTrucks();
                 for (int i = 0; i < take; i++) {
@@ -764,10 +920,9 @@ public class DispatchPanel extends JPanel {
 
         int actualTotalDispatched = count - remaining;
         if (actualTotalDispatched == 0) {
-            warn("Tidak ada kendaraan pemadam kebakaran yang tersedia di pos Anda maupun pos bantuan lainnya.");
+            warn("Tidak ada kendaraan pemadam kebakaran yang tersedia di pos Anda maupun pos bantuan lainnya (atau harus disisakan regu jaga).");
             return;
         }
-
 
         inc.setStatus(IncidentStatus.DISPATCHED);
         inc.setTrucksAssigned(inc.getTrucksAssigned() + actualTotalDispatched);
@@ -777,6 +932,9 @@ public class DispatchPanel extends JPanel {
         String msg = "<html><b>" + ownDispatch + " kendaraan</b> dikirim dari pos Anda (" + (ownStation != null ? ownStation.getName() : "—") + ").";
         if (backupDispatchCount > 0) {
             msg += "<br>Bantuan terkirim:" + backupInfo.toString();
+        }
+        if (inc.getSeverity() == IncidentSeverity.TRIPLE_RED && count > ownAvailableLimit && ownAvailable > 0) {
+            msg += "<br><br><i>Catatan: 1 regu disisakan di pos Anda sebagai regu jaga.</i>";
         }
         msg += "<br><br>Lokasi: " + inc.getLocation() + "<br>Insiden: " + inc.getIncidentId() + "<br>Oleh: " + admin + "</html>";
 
@@ -791,6 +949,9 @@ public class DispatchPanel extends JPanel {
 
         String notes = tfNotes.getText().trim();
         if (notes.isBlank()) notes = "Kebakaran berhasil dipadamkan.";
+        if (!notes.contains("Kepolisian")) {
+            notes += " Penyebab kebakaran diserahkan kepada pihak Kepolisian untuk penyelidikan lebih lanjut.";
+        }
         int trucksUsed = inc.getTrucksAssigned();
 
         int toFree = inc.getTrucksAssigned();
@@ -809,7 +970,7 @@ public class DispatchPanel extends JPanel {
         refresh();
         JOptionPane.showMessageDialog(this,
             "<html><b>Insiden " + inc.getIncidentId() + " selesai!</b><br>" +
-            "Lokasi: " + inc.getLocation() + "</html>",
+            "Lokasi: " + inc.getLocation() + "<br><i>Tim langsung kembali ke pos. Laporan penyebab diserahkan ke Kepolisian.</i></html>",
             "Insiden Selesai ✓", JOptionPane.INFORMATION_MESSAGE);
         refresh();
     }
@@ -818,7 +979,38 @@ public class DispatchPanel extends JPanel {
     private ArrayList<Incident> getSortedIncidents() {
         PriorityQueue<Incident> q = new PriorityQueue<>(Database.getIncidentQueue());
         ArrayList<Incident> list  = new ArrayList<>();
-        while (!q.isEmpty()) list.add(q.poll());
+
+        // Selected filter values
+        String filterCat = cbFilterCategory != null ? (String) cbFilterCategory.getSelectedItem() : "Semua Kategori";
+        String filterSev = cbFilterSeverity != null ? (String) cbFilterSeverity.getSelectedItem() : "Semua Keparahan";
+
+        while (!q.isEmpty()) {
+            Incident inc = q.poll();
+
+            // Filter by category
+            if (!"Semua Kategori".equals(filterCat)) {
+                BuildingCategory cat = inc.getBuildingCategory();
+                if (cat == null) continue;
+                boolean match = false;
+                if ("Bangunan".equals(filterCat) && cat == BuildingCategory.BANGUNAN) match = true;
+                if ("Industri".equals(filterCat) && cat == BuildingCategory.INDUSTRI) match = true;
+                if ("Lahan Kosong".equals(filterCat) && cat == BuildingCategory.LAHAN_KOSONG) match = true;
+                if (!match) continue;
+            }
+
+            // Filter by severity
+            if (!"Semua Keparahan".equals(filterSev)) {
+                IncidentSeverity sev = inc.getSeverity();
+                boolean match = false;
+                if ("Undetermined".equals(filterSev) && sev == IncidentSeverity.UNDETERMINED) match = true;
+                if ("Red".equals(filterSev) && sev == IncidentSeverity.RED) match = true;
+                if ("Double Red".equals(filterSev) && sev == IncidentSeverity.DOUBLE_RED) match = true;
+                if ("Triple Red".equals(filterSev) && sev == IncidentSeverity.TRIPLE_RED) match = true;
+                if (!match) continue;
+            }
+
+            list.add(inc);
+        }
         return list;
     }
 
@@ -879,6 +1071,17 @@ public class DispatchPanel extends JPanel {
         JLabel l = new JLabel(t); l.setFont(UITheme.FONT_SMALL); l.setForeground(UITheme.TEXT_SECONDARY);
         l.setAlignmentX(LEFT_ALIGNMENT); return l;
     }
+
+    /** HTML-escape special characters for safe embedding in JLabel HTML */
+    private static String htmlEscape(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    /** Build a single HTML row for the detail label */
+    private static String row(String label, String value) {
+        return "<b>" + htmlEscape(label) + "</b>: " + value + "<br>";
+    }
     private JLabel adminLbl(String t) {
         JLabel l = new JLabel(t); l.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 11));
         l.setForeground(UITheme.ACCENT_ORANGE); l.setAlignmentX(LEFT_ALIGNMENT); return l;
@@ -888,14 +1091,46 @@ public class DispatchPanel extends JPanel {
     private void saveAdminBuildingDetail() {
         Incident inc = getSelectedIncident();
         if (inc == null) { warn("Pilih insiden terlebih dahulu."); return; }
+        
+        inc.setSeverity((IncidentSeverity) cbSeverityAdmin.getSelectedItem());
         inc.setBuildingMaterial((BuildingMaterial) cbMaterial.getSelectedItem());
         inc.setDamageLevel((DamageLevel) cbDamage.getSelectedItem());
-        DamageLevel d = (DamageLevel) cbDamage.getSelectedItem();
+        
+        inc.setVictimsCritical((int) spCriticalAdmin.getValue());
+        inc.setVictimsInjured((int) spInjuredAdmin.getValue());
+        inc.setVictimsEvacuated((int) spEvacuatedAdmin.getValue());
+        inc.setVictimsSafe((int) spSafeAdmin.getValue());
+        
+        // Update priority score if severity/victim count updated
+        // If Lahan Kosong, also update area from admin field
+        if (inc.getBuildingCategory() == BuildingCategory.LAHAN_KOSONG) {
+            inc.getStructure().setArea((int) spAreaAdmin.getValue());
+        }
+        Database.rebuildQueue();
+
         JOptionPane.showMessageDialog(this,
-            "<html>Detail bangunan disimpan!<br>"
+            "<html>Detail laporan lapangan disimpan!<br>"
+            + "Keparahan: <b>" + inc.getSeverity().getLabel() + "</b><br>"
             + "Material: <b>" + inc.getBuildingMaterial().getLabel() + "</b><br>"
-            + "Kerusakan: <b>" + (d != null ? d.getLabel() : "-") + "</b></html>",
+            + "Kerusakan: <b>" + (inc.getDamageLevel() != null ? inc.getDamageLevel().getLabel() : "-") + "</b><br>"
+            + "Korban Kritis/Luka: <b>" + inc.getVictimsCritical() + "/" + inc.getVictimsInjured() + " orang</b></html>",
             "Tersimpan ✓", JOptionPane.INFORMATION_MESSAGE);
+        
+        refresh();
+    }
+
+    private JPanel createLabeledSpinner(String labelText, JSpinner spinner) {
+        JPanel p = new JPanel(new BorderLayout(4, 0));
+        p.setOpaque(false);
+        JLabel lbl = new JLabel(labelText);
+        lbl.setFont(UITheme.FONT_SMALL);
+        lbl.setForeground(UITheme.TEXT_SECONDARY);
+        lbl.setPreferredSize(new Dimension(65, 20));
+        spinner.setFont(UITheme.FONT_SMALL);
+        ((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setForeground(UITheme.TEXT_PRIMARY);
+        p.add(lbl, BorderLayout.WEST);
+        p.add(spinner, BorderLayout.CENTER);
+        return p;
     }
 
 }

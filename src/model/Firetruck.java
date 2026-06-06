@@ -10,16 +10,18 @@ public class Firetruck {
     private int currentWater;
     private int fuelLevel; // 0-100
     private TruckStatus status;
+    private FiretruckType type;
     private HashMap<Resource, Integer> resources; // required data structure
     private ArrayList<Admin> crew;                // required data structure
 
-    public Firetruck(String id, String plateNumber, int waterCapacity, int currentWater, int fuelLevel) {
+    public Firetruck(String id, String plateNumber, int waterCapacity, int currentWater, int fuelLevel, FiretruckType type) {
         this.id = id;
         this.plateNumber = plateNumber;
         this.waterCapacity = waterCapacity;
         this.currentWater = currentWater;
         this.fuelLevel = fuelLevel;
         this.status = TruckStatus.AVAILABLE;
+        this.type = type;
         this.resources = new HashMap<>();
         this.crew = new ArrayList<>();
 
@@ -38,6 +40,8 @@ public class Firetruck {
     public int getCurrentWater()    { return currentWater; }
     public int getFuelLevel()       { return fuelLevel; }
     public TruckStatus getStatus()  { return status; }
+    public FiretruckType getType()  { return type; }
+    public void setType(FiretruckType type) { this.type = type; }
     public HashMap<Resource, Integer> getResources() { return resources; }
     public ArrayList<Admin> getCrew() { return crew; }
 

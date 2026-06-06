@@ -52,7 +52,7 @@ public class IncidentService {
         if (victims < 0 || area < 0)                     return "Nilai tidak boleh negatif.";
 
         Structure structure = new Structure(location, area, victims);
-        Incident  incident  = new Incident(structure, severity, description, intensity, reportedBy);
+        Incident  incident  = new Incident(structure, IncidentSeverity.UNDETERMINED, description, intensity, reportedBy);
         Database.addIncident(incident);
         autoDispatch(incident);
         return null;
@@ -62,7 +62,7 @@ public class IncidentService {
         Random rng = new Random();
         String locName = RANDOM_LOCATIONS[rng.nextInt(RANDOM_LOCATIONS.length)];
         String desc    = RANDOM_DESCS[rng.nextInt(RANDOM_DESCS.length)];
-        IncidentSeverity sev = IncidentSeverity.values()[rng.nextInt(IncidentSeverity.values().length)];
+        IncidentSeverity sev = IncidentSeverity.UNDETERMINED;
         int victims   = rng.nextInt(11);
         int area      = 20 + rng.nextInt(481);
         int intensity = 1 + rng.nextInt(10);
@@ -243,7 +243,11 @@ public class IncidentService {
         for (StationDistance sd : list) {
             if (remaining <= 0) break;
             int avail = sd.station.getAvailableTruckCount();
+            if (inc.getSeverity() == IncidentSeverity.TRIPLE_RED) {
+                avail = Math.max(0, avail - 1); // Enforce 1 guard truck standby
+            }
             int take = Math.min(remaining, avail);
+            if (take <= 0) continue;
 
             ArrayList<Firetruck> assistTrucks = sd.station.getAvailableTrucks();
             for (int i = 0; i < take; i++) {

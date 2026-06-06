@@ -1,10 +1,10 @@
 package model;
 
 public enum IncidentSeverity {
-    LOW("Rendah"),
-    MEDIUM("Sedang"),
-    HIGH("Tinggi"),
-    CRITICAL("Kritis");
+    UNDETERMINED("Belum Ditentukan"),
+    RED("Red (Kecil)"),
+    DOUBLE_RED("Double Red (Sedang)"),
+    TRIPLE_RED("Triple Red (Besar)");
 
     private final String label;
 

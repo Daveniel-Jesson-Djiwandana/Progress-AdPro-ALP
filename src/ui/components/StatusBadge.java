@@ -32,11 +32,23 @@ public class StatusBadge extends JLabel {
 
     public static StatusBadge forSeverity(IncidentSeverity sev) {
         Color color;
+        if (sev == null) {
+            return new StatusBadge("N/A", UITheme.INFO);
+        }
         switch (sev) {
-            case MEDIUM:   color = UITheme.SEV_MEDIUM;   break;
-            case HIGH:     color = UITheme.SEV_HIGH;     break;
-            case CRITICAL: color = UITheme.SEV_CRITICAL; break;
-            default:       color = UITheme.SEV_LOW;      break;
+            case RED:
+                color = new Color(0xd9, 0x6f, 0x1e); // Orange-Red for Red
+                break;
+            case DOUBLE_RED:
+                color = new Color(0xb8, 0x1c, 0x1c); // Strong Red for Double Red
+                break;
+            case TRIPLE_RED:
+                color = new Color(0xff, 0x00, 0x00); // Flashy Pure Red for Triple Red
+                break;
+            case UNDETERMINED:
+            default:
+                color = new Color(100, 100, 100); // Neutral grey for Undetermined
+                break;
         }
         return new StatusBadge(sev.getLabel(), color);
     }

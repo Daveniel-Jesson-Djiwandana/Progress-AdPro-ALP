@@ -28,6 +28,7 @@ public class FiretruckResourcePanel extends JPanel {
     // UI labels and buttons in details/actions side card
     private JLabel lblEditTitle;
     private JLabel lblEditPlate;
+    private JLabel lblEditType;
     private JLabel lblStatusInfo;
     
     private JLabel lblWaterVal;
@@ -139,6 +140,11 @@ public class FiretruckResourcePanel extends JPanel {
         lblId.setForeground(UITheme.TEXT_PRIMARY);
         lblId.setAlignmentX(LEFT_ALIGNMENT);
 
+        JLabel lblType = new JLabel(truck.getType().getLabel());
+        lblType.setFont(new Font("SansSerif", Font.BOLD, 12));
+        lblType.setForeground(UITheme.ACCENT);
+        lblType.setAlignmentX(LEFT_ALIGNMENT);
+
         JLabel lblPlate = new JLabel(truck.getPlateNumber());
         lblPlate.setFont(UITheme.FONT_SMALL);
         lblPlate.setForeground(UITheme.TEXT_SECONDARY);
@@ -154,6 +160,7 @@ public class FiretruckResourcePanel extends JPanel {
         statusBadge.setBackground(new Color(statusColor.getRed() / 6, statusColor.getGreen() / 6, statusColor.getBlue() / 6));
 
         leftPanel.add(lblId);
+        leftPanel.add(lblType);
         leftPanel.add(Box.createVerticalStrut(2));
         leftPanel.add(lblPlate);
         leftPanel.add(Box.createVerticalStrut(8));
@@ -276,6 +283,11 @@ public class FiretruckResourcePanel extends JPanel {
         lblEditPlate.setForeground(UITheme.TEXT_SECONDARY);
         lblEditPlate.setAlignmentX(LEFT_ALIGNMENT);
 
+        lblEditType = new JLabel("--");
+        lblEditType.setFont(UITheme.FONT_SMALL);
+        lblEditType.setForeground(UITheme.TEXT_SECONDARY);
+        lblEditType.setAlignmentX(LEFT_ALIGNMENT);
+
         lblStatusInfo = new JLabel("Status: Standby");
         lblStatusInfo.setFont(UITheme.FONT_BODY);
         lblStatusInfo.setForeground(UITheme.SUCCESS);
@@ -314,6 +326,7 @@ public class FiretruckResourcePanel extends JPanel {
 
         panel.add(lblEditTitle);
         panel.add(lblEditPlate);
+        panel.add(lblEditType);
         panel.add(Box.createVerticalStrut(12));
         
         panel.add(lblStatusInfo);
@@ -366,6 +379,7 @@ public class FiretruckResourcePanel extends JPanel {
         editingTruck = truck;
         lblEditTitle.setText("  Detail: " + truck.getId());
         lblEditPlate.setText("Plate: " + truck.getPlateNumber());
+        lblEditType.setText("Tipe: " + truck.getType().getLabel());
 
         lblWaterVal.setText("• Air: " + truck.getCurrentWater() + " / " + truck.getWaterCapacity() + " L");
         lblFuelVal.setText("• BBM: " + truck.getFuelLevel() + "%");

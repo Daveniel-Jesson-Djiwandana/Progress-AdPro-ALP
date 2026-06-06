@@ -10,19 +10,21 @@ import ui.components.VectorIcon;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.ActionListener;
 
 public class ReportIncidentPanel extends JPanel {
 
     private final UserDashboard parent;
 
     private JTextField tfMapCoord;
-    private JTextField tfAddress;
+    private JLabel     lblAddress;            // HTML label — truncates with "..."
+    private String     fullAddress = "";      // stores the complete address text
+    private boolean    addressExpanded;       // click-to-toggle state
     private JTextArea  taDesc;
     private JComboBox<BuildingCategory>    cbBuildingCat;
     private JComboBox<String>              cbBuildingSubType;
-    private JComboBox<IncidentSeverity>    cbSeverity;
     private JSpinner   spVictims;
-    private JSpinner   spArea;
+
     private JLabel     lblResult;
     private OsmCityMapPanel mapPanel;
     private JLabel     lblZoom;
@@ -184,49 +186,88 @@ public class ReportIncidentPanel extends JPanel {
         gc.gridx   = 0;
         int row = 0;
 
-        // Koordinat (read-only, diisi klik peta)
+        // Pencarian Alamat / Bangunan (Geocoding)
+        JTextField tfSearch = new JTextField();
+        tfSearch.setFont(UITheme.FONT_BODY);
+        tfSearch.setBackground(UITheme.BG_DARK);
+        tfSearch.setForeground(UITheme.TEXT_MUTED);
+        tfSearch.setCaretColor(UITheme.ACCENT);
+        tfSearch.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(UITheme.BORDER, 1, true),
+            BorderFactory.createEmptyBorder(5, 8, 5, 8)));
+        tfSearch.setText("Cari alamat/bangunan...");
+        tfSearch.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override public void focusGained(java.awt.event.FocusEvent e) {
+                if (tfSearch.getText().equals("Cari alamat/bangunan...")) {
+                    tfSearch.setText("");
+                    tfSearch.setForeground(UITheme.TEXT_PRIMARY);
+                }
+            }
+            @Override public void focusLost(java.awt.event.FocusEvent e) {
+                if (tfSearch.getText().isEmpty()) {
+                    tfSearch.setText("Cari alamat/bangunan...");
+                    tfSearch.setForeground(UITheme.TEXT_MUTED);
+                }
+            }
+        });
+
+        JButton btnSearch = new JButton("Cari");
+        btnSearch.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 12));
+        btnSearch.setForeground(UITheme.TEXT_PRIMARY);
+        btnSearch.setBackground(UITheme.ACCENT);
+        btnSearch.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+        btnSearch.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        ActionListener searchAction = e -> {
+            String q = tfSearch.getText().trim();
+            if (!q.isEmpty() && !q.equals("Cari alamat/bangunan...")) {
+                performSearch(q);
+            }
+        };
+        btnSearch.addActionListener(searchAction);
+        tfSearch.addActionListener(searchAction);
+
+        JPanel searchBar = new JPanel(new BorderLayout(4, 0));
+        searchBar.setOpaque(false);
+        searchBar.add(tfSearch, BorderLayout.CENTER);
+        searchBar.add(btnSearch, BorderLayout.EAST);
+
+        row = addField(form, gc, row, "Cari Alamat / Bangunan", searchBar);
+
+        // Koordinat (read-only, diisi klik peta atau hasil pencarian)
         tfMapCoord = tf();
         tfMapCoord.setEditable(false);
         tfMapCoord.setText("Klik peta untuk pilih titik...");
         tfMapCoord.setForeground(UITheme.TEXT_SECONDARY);
         row = addField(form, gc, row, "Koordinat Lokasi", tfMapCoord);
 
-        // Alamat (read-only, diisi oleh geocoding)
-        tfAddress = tf();
-        tfAddress.setEditable(false);
-        tfAddress.setText("Klik peta untuk deteksi alamat...");
-        tfAddress.setForeground(UITheme.TEXT_SECONDARY);
-        row = addField(form, gc, row, "Alamat Lokasi (Nominatim)", tfAddress);
-
-        // Severity
-        cbSeverity = new JComboBox<>(IncidentSeverity.values());
-        cbSeverity.setRenderer(new DefaultListCellRenderer() {
-            @Override public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f) {
-                super.getListCellRendererComponent(l, v, i, s, f);
-                if (v instanceof IncidentSeverity) setText(((IncidentSeverity)v).getLabel());
-                setBackground(s ? UITheme.ACCENT_RED : UITheme.BG_SURFACE);
-                setForeground(UITheme.TEXT_PRIMARY);
-                return this;
+        // Alamat (read-only, diisi oleh geocoding — truncate + click to expand)
+        lblAddress = new JLabel("Klik peta untuk deteksi alamat...");
+        lblAddress.setFont(UITheme.FONT_BODY);
+        lblAddress.setForeground(UITheme.TEXT_SECONDARY);
+        lblAddress.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        lblAddress.setToolTipText("Klik untuk memperluas/memperkecil alamat");
+        lblAddress.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(UITheme.BORDER, 1, true),
+            BorderFactory.createEmptyBorder(5, 8, 5, 8)));
+        lblAddress.setOpaque(true);
+        lblAddress.setBackground(UITheme.BG_DARK);
+        addressExpanded = false;
+        lblAddress.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (fullAddress != null && !fullAddress.isEmpty()) {
+                    addressExpanded = !addressExpanded;
+                    updateAddressLabel();
+                }
             }
         });
-        cbSeverity.setBackground(UITheme.BG_SURFACE);
-        cbSeverity.setForeground(UITheme.TEXT_PRIMARY);
-        row = addField(form, gc, row, "Tingkat Kebakaran", cbSeverity);
+        row = addField(form, gc, row, "Alamat Lokasi (Nominatim)", lblAddress);
 
-        // Korban & Luas
+
+
+        // Korban Terjebak (Luas Area diisi admin di lapangan, bukan oleh warga)
         spVictims = sp(0, 0, 999, 1);
-        spArea    = sp(50, 1, 99999, 10);
-        gc.gridy = row++;
-        JPanel twoCol = new JPanel(new GridLayout(1, 2, 8, 0));
-        twoCol.setOpaque(false);
-        JPanel colA = new JPanel(new BorderLayout(0, 3)); colA.setOpaque(false);
-        JPanel colB = new JPanel(new BorderLayout(0, 3)); colB.setOpaque(false);
-        colA.add(fLbl("Korban Terjebak"), BorderLayout.NORTH);
-        colA.add(spVictims, BorderLayout.CENTER);
-        colB.add(fLbl("Luas (m²)"), BorderLayout.NORTH);
-        colB.add(spArea, BorderLayout.CENTER);
-        twoCol.add(colA); twoCol.add(colB);
-        form.add(twoCol, gc);
+        row = addField(form, gc, row, "Korban Terjebak", spVictims);
 
         // ── Kategori Bangunan ─────────────────────────────────────────────────
         cbBuildingCat = new JComboBox<>(BuildingCategory.values());
@@ -243,7 +284,7 @@ public class ReportIncidentPanel extends JPanel {
         row = addField(form, gc, row, "Kategori Bangunan", cbBuildingCat);
 
         // ── Subtipe Bangunan — diupdate otomatis saat kategori berubah ────────
-        cbBuildingSubType = new JComboBox<>(BuildingCategory.HUNIAN.getSubTypes());
+        cbBuildingSubType = new JComboBox<>(BuildingCategory.BANGUNAN.getSubTypes());
         cbBuildingSubType.setBackground(UITheme.BG_SURFACE);
         cbBuildingSubType.setForeground(UITheme.TEXT_PRIMARY);
         cbBuildingSubType.setEditable(false);
@@ -256,8 +297,8 @@ public class ReportIncidentPanel extends JPanel {
         row = addField(form, gc, row, "Jenis Bangunan", cbBuildingSubType);
 
         // Badge preview objek terbakar
-        JLabel lblPreview = new JLabel("Contoh: " + BuildingCategory.HUNIAN.getSubTypes()[0]
-            + " (" + BuildingCategory.HUNIAN.getLabel() + ")");
+        JLabel lblPreview = new JLabel("Contoh: " + BuildingCategory.BANGUNAN.getSubTypes()[0]
+            + " (" + BuildingCategory.BANGUNAN.getLabel() + ")");
         lblPreview.setFont(new Font(UITheme.FONT_FAMILY, Font.ITALIC, 10));
         lblPreview.setForeground(UITheme.TEXT_MUTED);
         Runnable updatePreview = () -> {
@@ -322,7 +363,7 @@ public class ReportIncidentPanel extends JPanel {
         }
 
         // Lokasi = koordinat GPS + alamat (jika terdeteksi)
-        String addrText = tfAddress.getText().trim();
+        String addrText = fullAddress != null ? fullAddress.trim() : "";
         String fullLoc;
         if (addrText.isEmpty() || addrText.equals("Klik peta untuk pilih titik...") || 
             addrText.equals("Klik peta untuk deteksi alamat...") || addrText.equals("Mencari alamat...") || 
@@ -335,21 +376,13 @@ public class ReportIncidentPanel extends JPanel {
         String desc    = taDesc.getText().trim();
         if (desc.isEmpty()) desc = "Kebakaran dilaporkan oleh warga.";
 
-        IncidentSeverity severity = (IncidentSeverity) cbSeverity.getSelectedItem();
+        IncidentSeverity severity = IncidentSeverity.UNDETERMINED;
         int intensity = 5;
-        if (severity != null) {
-            switch (severity) {
-                case LOW:      intensity = 2; break;
-                case MEDIUM:   intensity = 5; break;
-                case HIGH:     intensity = 8; break;
-                case CRITICAL: intensity = 10; break;
-            }
-        }
 
         String err = IncidentService.reportIncident(
             fullLoc, severity,
             desc, (int) spVictims.getValue(),
-            ((Number) spArea.getValue()).intValue(),
+            0, // area default 0; diisi admin di lapangan untuk Lahan Kosong
             intensity, user);
 
         if (err != null) {
@@ -422,14 +455,15 @@ public class ReportIncidentPanel extends JPanel {
     public void reset() {
         tfMapCoord.setText("Klik peta untuk pilih titik...");
         tfMapCoord.setForeground(UITheme.TEXT_SECONDARY);
-        tfAddress.setText("Klik peta untuk deteksi alamat...");
-        tfAddress.setForeground(UITheme.TEXT_SECONDARY);
+        fullAddress = "";
+        addressExpanded = false;
+        lblAddress.setText("Klik peta untuk deteksi alamat...");
+        lblAddress.setForeground(UITheme.TEXT_SECONDARY);
         taDesc.setText("");
-        cbSeverity.setSelectedIndex(0);
         cbBuildingCat.setSelectedIndex(0);
-        cbBuildingSubType.setModel(new DefaultComboBoxModel<>(BuildingCategory.HUNIAN.getSubTypes()));
+        cbBuildingSubType.setModel(new DefaultComboBoxModel<>(BuildingCategory.BANGUNAN.getSubTypes()));
         spVictims.setValue(0);
-        spArea.setValue(50);
+
         lblResult.setText(" ");
         mapLat = Double.NaN; mapLon = Double.NaN;
         if (mapPanel != null) mapPanel.clearSelection();
@@ -479,6 +513,40 @@ public class ReportIncidentPanel extends JPanel {
         return a;
     }
 
+    /** Set the full address and update the truncated label */
+    private void setAddressDisplay(String addr, Color color) {
+        fullAddress = addr;
+        addressExpanded = false;
+        lblAddress.setForeground(color);
+        updateAddressLabel();
+    }
+
+    /** Render the address label — truncated with "..." or full wrapped */
+    private void updateAddressLabel() {
+        int MAX_ADDR_LEN = 40;
+        if (fullAddress == null || fullAddress.isEmpty()) {
+            lblAddress.setText("Klik peta untuk deteksi alamat...");
+            return;
+        }
+        if (fullAddress.equals("Mencari alamat...") || fullAddress.equals("Klik peta untuk deteksi alamat...") || fullAddress.equals("Klik peta untuk pilih titik...")) {
+            lblAddress.setText(fullAddress);
+            return;
+        }
+        String escaped = fullAddress.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+        if (!addressExpanded && fullAddress.length() > MAX_ADDR_LEN) {
+            String shortAddr = escaped.substring(0, MAX_ADDR_LEN);
+            lblAddress.setText("<html><body style='width:240px'>" + shortAddr + "… <i style='color:#FFB347'>(klik untuk lihat lengkap)</i></body></html>");
+        } else {
+            lblAddress.setText("<html><body style='width:240px'>" + escaped + "</body></html>");
+        }
+        lblAddress.revalidate();
+        lblAddress.repaint();
+        if (sidebarPanel != null) {
+            sidebarPanel.revalidate();
+            sidebarPanel.repaint();
+        }
+    }
+
     private JSpinner sp(int v, int min, int max, int step) {
         JSpinner s = new JSpinner(new SpinnerNumberModel(v, min, max, step));
         s.setFont(UITheme.FONT_BODY);
@@ -487,8 +555,10 @@ public class ReportIncidentPanel extends JPanel {
     }
 
     private void reverseGeocode(double lat, double lon) {
-        tfAddress.setText("Mencari alamat...");
-        tfAddress.setForeground(UITheme.TEXT_SECONDARY);
+        fullAddress = "Mencari alamat...";
+        addressExpanded = false;
+        lblAddress.setText("Mencari alamat...");
+        lblAddress.setForeground(UITheme.TEXT_SECONDARY);
 
         new Thread(() -> {
             try {
@@ -519,28 +589,125 @@ public class ReportIncidentPanel extends JPanel {
                     if (displayName != null && !displayName.trim().isEmpty()) {
                         final String finalAddr = displayName.trim();
                         SwingUtilities.invokeLater(() -> {
-                            tfAddress.setText(finalAddr);
-                            tfAddress.setForeground(UITheme.TEXT_PRIMARY);
+                            setAddressDisplay(finalAddr, UITheme.TEXT_PRIMARY);
                         });
                     } else {
                         SwingUtilities.invokeLater(() -> {
-                            tfAddress.setText("Alamat tidak ditemukan");
-                            tfAddress.setForeground(UITheme.TEXT_SECONDARY);
+                            setAddressDisplay("Alamat tidak ditemukan", UITheme.TEXT_SECONDARY);
                         });
                     }
                 } else {
                     SwingUtilities.invokeLater(() -> {
-                        tfAddress.setText("Gagal mendapatkan alamat (HTTP " + respCode + ")");
-                        tfAddress.setForeground(UITheme.DANGER);
+                        setAddressDisplay("Gagal mendapatkan alamat (HTTP " + respCode + ")", UITheme.DANGER);
                     });
                 }
             } catch (Exception e) {
                 SwingUtilities.invokeLater(() -> {
-                    tfAddress.setText("Gagal mendapatkan alamat");
-                    tfAddress.setForeground(UITheme.DANGER);
+                    setAddressDisplay("Gagal mendapatkan alamat", UITheme.DANGER);
                 });
             }
         }, "ReverseGeocodeThread").start();
+    }
+
+    /** Perform forward geocoding search via Nominatim */
+    private void performSearch(String query) {
+        lblResult.setForeground(UITheme.TEXT_SECONDARY);
+        lblResult.setText("Mencari \"" + query + "\"...");
+
+        new Thread(() -> {
+            try {
+                String encoded = java.net.URLEncoder.encode(query + " Surabaya", "UTF-8");
+                String urlStr = "https://nominatim.openstreetmap.org/search?q=" + encoded
+                    + "&format=json&limit=1&bounded=1&viewbox=112.55,-7.15,112.88,-7.48";
+                java.net.URL url = new java.net.URL(urlStr);
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("User-Agent", "SiagaKebakaran/1.0 (fire-reporting-app)");
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+
+                int respCode = conn.getResponseCode();
+                if (respCode == 200) {
+                    java.io.BufferedReader in = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = in.readLine()) != null) response.append(line);
+                    in.close();
+
+                    String body = response.toString().trim();
+                    // Check for empty array
+                    if (body.equals("[]") || body.isEmpty()) {
+                        SwingUtilities.invokeLater(() -> {
+                            lblResult.setForeground(UITheme.DANGER);
+                            lblResult.setText("Lokasi \"" + query + "\" tidak ditemukan.");
+                        });
+                        return;
+                    }
+
+                    // Parse lat, lon, display_name from first result
+                    String latStr = extractJsonString(body, "lat");
+                    String lonStr = extractJsonString(body, "lon");
+                    String displayName = extractJsonString(body, "display_name");
+
+                    if (latStr == null || lonStr == null) {
+                        SwingUtilities.invokeLater(() -> {
+                            lblResult.setForeground(UITheme.DANGER);
+                            lblResult.setText("Gagal memparsing hasil pencarian.");
+                        });
+                        return;
+                    }
+
+                    double lat = Double.parseDouble(latStr);
+                    double lon = Double.parseDouble(lonStr);
+
+                    // Validate Surabaya bounds
+                    if (lat < -7.48 || lat > -7.15 || lon < 112.55 || lon > 112.88) {
+                        SwingUtilities.invokeLater(() -> {
+                            lblResult.setForeground(UITheme.DANGER);
+                            lblResult.setText("Lokasi di luar wilayah Surabaya.");
+                        });
+                        return;
+                    }
+
+                    SwingUtilities.invokeLater(() -> {
+                        // Set koordinat
+                        mapLat = lat;
+                        mapLon = lon;
+                        tfMapCoord.setText(String.format("%.5f, %.5f", lat, lon));
+                        tfMapCoord.setForeground(UITheme.ACCENT);
+
+                        // Center map and place marker
+                        mapPanel.setCenterPosition(lat, lon, 17);
+                        mapPanel.setSelectedLocation(lat, lon);
+
+                        // Set address
+                        if (displayName != null && !displayName.trim().isEmpty()) {
+                            setAddressDisplay(displayName.trim(), UITheme.TEXT_PRIMARY);
+                        } else {
+                            reverseGeocode(lat, lon);
+                        }
+
+                        // Open sidebar if hidden
+                        if (sidebarPanel != null && !sidebarPanel.isVisible())
+                            sidebarPanel.setVisible(true);
+
+                        lblResult.setForeground(UITheme.SUCCESS);
+                        lblResult.setText("✓ Ditemukan: " + query);
+                    });
+                } else {
+                    SwingUtilities.invokeLater(() -> {
+                        lblResult.setForeground(UITheme.DANGER);
+                        lblResult.setText("Gagal pencarian (HTTP " + respCode + ")");
+                    });
+                }
+            } catch (Exception e) {
+                SwingUtilities.invokeLater(() -> {
+                    lblResult.setForeground(UITheme.DANGER);
+                    lblResult.setText("Gagal pencarian: " + e.getMessage());
+                });
+            }
+        }, "SearchGeocodeThread").start();
     }
 
     private String extractJsonString(String json, String key) {

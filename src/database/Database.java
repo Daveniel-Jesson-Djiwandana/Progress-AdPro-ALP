@@ -38,21 +38,31 @@ public class Database {
 
     private static void initDemoData() {
         String[][] stationData = {
-            {"Dinas Pemadam Kebakaran & Penyelamatan Surabaya", "Pusat Kota", "-7.24960", "112.73770"},
-            {"Dinas Pemadam Kebakaran Kota Surabaya – Pos Pasar Turi/Bubutan", "Pasar Turi", "-7.24910", "112.73720"},
-            {"Pos Damkar Perak Barat", "Perak Barat", "-7.22680", "112.73690"},
-            {"Pos Damkar 1 Demak Grudo", "Demak Grudo", "-7.27310", "112.73140"},
-            {"Pos Damkar Gunung Anyar", "Gunung Anyar", "-7.33610", "112.79520"},
-            {"Pos Damkar Tirta 5 Demak / Benowo", "Demak / Benowo", "-7.23190", "112.63980"},
-            {"Pos Damkar Menur", "Menur", "-7.28520", "112.76010"},
-            {"Pos Damkar Bulak", "Bulak", "-7.23890", "112.80010"},
-            {"Pos Damkar Keputih", "Keputih", "-7.29210", "112.80540"},
-            {"Pos Damkar Wiyung", "Wiyung", "-7.30820", "112.70150"},
-            {"Pos Damkar Rungkut", "Rungkut", "-7.32350", "112.77680"},
-            {"Pos Damkar Karangpilang", "Karangpilang", "-7.33020", "112.68310"},
-            {"Pos Damkar Lakarsantri", "Lakarsantri", "-7.32390", "112.65780"},
-            {"Pos Damkar Kenjeran", "Kenjeran", "-7.24180", "112.78120"},
-            {"Pos Damkar Sukolilo", "Sukolilo", "-7.28940", "112.79130"}
+            // Pusat
+            {"Dinas Pemadam Kebakaran & Penyelamatan Surabaya", "Pusat Kota", "-7.24960", "112.73770", "Pusat", "true"},
+            {"Pos Damkar Pasar Turi", "Pasar Turi", "-7.24910", "112.73720", "Pusat", "false"},
+            {"Pos Damkar Tegalsari", "Tegalsari", "-7.26000", "112.74200", "Pusat", "false"},
+            {"Pos Damkar Genteng", "Genteng", "-7.25800", "112.74800", "Pusat", "false"},
+            // Timur
+            {"Pos Damkar Menur", "Menur", "-7.28520", "112.76010", "Timur", "true"},
+            {"Pos Damkar Sukolilo", "Sukolilo", "-7.28940", "112.79130", "Timur", "false"},
+            {"Pos Damkar Keputih", "Keputih", "-7.29210", "112.80540", "Timur", "false"},
+            {"Pos Damkar Rungkut", "Rungkut", "-7.32350", "112.77680", "Timur", "false"},
+            // Utara
+            {"Pos Damkar Perak Barat", "Perak Barat", "-7.22680", "112.73690", "Utara", "true"},
+            {"Pos Damkar Bulak", "Bulak", "-7.23890", "112.80010", "Utara", "false"},
+            {"Pos Damkar Kenjeran", "Kenjeran", "-7.24180", "112.78120", "Utara", "false"},
+            {"Pos Damkar Semampir", "Semampir", "-7.21000", "112.75500", "Utara", "false"},
+            // Barat
+            {"Pos Damkar Benowo", "Benowo", "-7.23190", "112.63980", "Barat", "true"},
+            {"Pos Damkar Lakarsantri", "Lakarsantri", "-7.32390", "112.65780", "Barat", "false"},
+            {"Pos Damkar Wiyung", "Wiyung", "-7.30820", "112.70150", "Barat", "false"},
+            {"Pos Damkar Tandes", "Tandes", "-7.26500", "112.68000", "Barat", "false"},
+            // Selatan
+            {"Pos Damkar Karangpilang", "Karangpilang", "-7.33020", "112.68310", "Selatan", "true"},
+            {"Pos Damkar Gunung Anyar", "Gunung Anyar", "-7.33610", "112.79520", "Selatan", "false"},
+            {"Pos Damkar Demak Grudo", "Demak Grudo", "-7.27310", "112.73140", "Selatan", "false"},
+            {"Pos Damkar Jambangan", "Jambangan", "-7.31500", "112.72000", "Selatan", "false"}
         };
 
         for (int i = 0; i < stationData.length; i++) {
@@ -60,7 +70,9 @@ public class Database {
             String addr = stationData[i][1];
             double lat = Double.parseDouble(stationData[i][2]);
             double lon = Double.parseDouble(stationData[i][3]);
-            FireStation station = new FireStation(name, addr, lat, lon);
+            String rayon = stationData[i][4];
+            boolean isInduk = Boolean.parseBoolean(stationData[i][5]);
+            FireStation station = new FireStation(name, addr, lat, lon, rayon, isInduk);
             fireStations.add(station);
 
             // Generate admin account per station
@@ -82,13 +94,14 @@ public class Database {
             users.put(username, admin);
             station.addEmployee(admin);
 
-            // Generate 5 firetrucks per station
+            // Generate 5 firetrucks per station (with Tipe 1 to Tipe 5)
             for (int k = 1; k <= 5; k++) {
                 String truckID = "PMK-" + addr.replace(" ", "") + "-" + k;
                 String plate = "L " + (1000 + i * 10 + k) + " PMK";
                 int cap = (k % 2 == 0) ? 3000 : 5000;
                 int pressure = (k % 2 == 0) ? 80 : 100;
-                Firetruck truck = new Firetruck(truckID, plate, cap, cap, pressure);
+                FiretruckType type = FiretruckType.values()[k - 1];
+                Firetruck truck = new Firetruck(truckID, plate, cap, cap, pressure, type);
                 if (k == 1) {
                     truck.addCrewMember(admin);
                 }

@@ -31,11 +31,13 @@ public class ReportHistory {
 
     private void estimateResources(IncidentSeverity sev, int trucks) {
         int m = Math.max(1, trucks);
-        switch (sev) {
-            case MEDIUM:   m *= 2; break;
-            case HIGH:     m *= 3; break;
-            case CRITICAL: m *= 5; break;
-            default: break;
+        if (sev != null) {
+            switch (sev) {
+                case DOUBLE_RED: m *= 2; break;
+                case TRIPLE_RED: m *= 5; break;
+                case RED:        m *= 1; break;
+                default: break;
+            }
         }
         resource_used.put(Resource.WATER,         500 * m);
         resource_used.put(Resource.FOAM,          50  * m);

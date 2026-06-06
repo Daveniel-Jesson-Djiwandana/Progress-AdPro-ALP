@@ -6,6 +6,7 @@ import org.openstreetmap.gui.jmapviewer.tilesources.*;
 import org.openstreetmap.gui.jmapviewer.events.JMVCommandEvent;
 
 import ui.UITheme;
+import database.Database;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,6 +38,9 @@ public class OsmCityMapPanel extends JPanel {
     private java.util.List<model.Incident> currentIncidents = new java.util.ArrayList<>();
     private int highlightedRow = -1;
     private java.util.function.IntConsumer onIncidentClicked;
+
+    // Pos Damkar markers
+    private final java.util.List<StationMarker> stationMarkers = new java.util.ArrayList<>();
 
     // ── Konstruktor ───────────────────────────────────────────────────────────
     public OsmCityMapPanel(BiConsumer<Double, Double> onLocationPicked) {
@@ -129,48 +133,65 @@ public class OsmCityMapPanel extends JPanel {
                             return; // Ignore selection outside Surabaya
                         }
 
-                        selectedLat = lat;
-                        selectedLon = lon;
-
-                        // Hapus marker lama, pasang marker baru
-                        if (selectedMarker != null) map.removeMapMarker(selectedMarker);
-                        selectedMarker = new MapMarkerDot(new Coordinate(lat, lon)) {
-                            @Override
-                            public void paint(Graphics g, Point position, int radius) {
-                                Graphics2D g2 = (Graphics2D) g.create();
-                                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                                                   RenderingHints.VALUE_ANTIALIAS_ON);
-                                // Lingkaran luar (halo minimalis)
-                                g2.setColor(new Color(UITheme.ACCENT.getRed(), UITheme.ACCENT.getGreen(), UITheme.ACCENT.getBlue(), 60));
-                                g2.fillOval(position.x - 16, position.y - 16, 32, 32);
-                                // Titik merah aksen
-                                g2.setColor(UITheme.ACCENT);
-                                g2.fillOval(position.x - 7, position.y - 7, 14, 14);
-                                // Putih tengah
-                                g2.setColor(Color.WHITE);
-                                g2.fillOval(position.x - 3, position.y - 3, 6, 6);
-                                // Label koordinat
-                                String label = String.format("%.4f, %.4f", lat, lon);
-                                g2.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 11));
-                                FontMetrics fm = g2.getFontMetrics();
-                                int tw = fm.stringWidth(label) + 10, th = fm.getHeight() + 4;
-                                int tx = position.x - tw / 2;
-                                int ty = position.y - 26 - th;
-                                if (ty < 4) ty = position.y + 18;
-                                g2.setColor(UITheme.BG_CARD);
-                                g2.fillRoundRect(tx, ty, tw, th, 4, 4);
-                                g2.setColor(UITheme.ACCENT);
-                                g2.drawRoundRect(tx, ty, tw, th, 4, 4);
-                                g2.setColor(UITheme.TEXT_PRIMARY);
-                                g2.drawString(label, tx + 5, ty + fm.getAscent() + 2);
-                                g2.dispose();
-                            }
-                        };
-                        map.addMapMarker(selectedMarker);
-                        map.repaint();
+                        setSelectedLocation(lat, lon);
 
                         onLocationPicked.accept(lat, lon);
                     }
+                }
+            }
+        });
+
+        // ── Inisialisasi Pos Damkar di Peta ──────────────────────────────────
+        for (model.FireStation station : Database.getFireStations()) {
+            Coordinate coord = new Coordinate(station.getLatitude(), station.getLongitude());
+            StationMarker marker = new StationMarker(coord, station);
+            stationMarkers.add(marker);
+            map.addMapMarker(marker);
+        }
+
+        // ── Mouse hover tooltip untuk Pos Damkar & Insiden ────────────────────
+        map.addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                boolean hovered = false;
+                for (StationMarker marker : stationMarkers) {
+                    Point p = map.getMapPosition(marker.getCoordinate());
+                    if (p != null) {
+                        int dx = e.getX() - p.x;
+                        int dy = e.getY() - p.y;
+                        if (dx * dx + dy * dy <= 12 * 12) {
+                            map.setToolTipText("<html><body style='font-family:sans-serif; font-size:11px; padding:3px;'>"
+                                + "<b>🚒 " + marker.getStation().getName() + "</b><br>"
+                                + "Rayon: " + marker.getStation().getRayon() + " ("
+                                + (marker.getStation().isInduk() ? "Pos Induk" : "Pos Pembantu") + ")<br>"
+                                + "Truk Standby: <b>" + marker.getStation().getAvailableTruckCount() + "</b> unit"
+                                + "</body></html>");
+                            hovered = true;
+                            break;
+                        }
+                    }
+                }
+                if (!hovered) {
+                    for (IncidentMarker marker : incidentMarkers) {
+                        Point p = map.getMapPosition(marker.getCoordinate());
+                        if (p != null) {
+                            int dx = e.getX() - p.x;
+                            int dy = e.getY() - p.y;
+                            if (dx * dx + dy * dy <= 15 * 15) {
+                                map.setToolTipText("<html><body style='font-family:sans-serif; font-size:11px; padding:3px;'>"
+                                    + "<b>🚨 Insiden " + marker.getIncident().getIncidentId() + "</b><br>"
+                                    + marker.getIncident().getLocation().replaceAll("\\[.*?\\]","").trim() + "<br>"
+                                    + "Status: " + marker.getIncident().getStatus() + "<br>"
+                                    + "Keparahan: <font color='#FF5555'><b>" + marker.getIncident().getSeverity() + "</b></font>"
+                                    + "</body></html>");
+                                hovered = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!hovered) {
+                    map.setToolTipText(null);
                 }
             }
         });
@@ -184,6 +205,11 @@ public class OsmCityMapPanel extends JPanel {
     public void zoomReset() { map.setDisplayPosition(new Coordinate(SURABAYA_LAT, SURABAYA_LON), DEFAULT_ZOOM); }
     public double getZoom() { return map.getZoom(); }
 
+    /** Pindahkan pusat peta ke koordinat tertentu dengan zoom level */
+    public void setCenterPosition(double lat, double lon, int zoom) {
+        map.setDisplayPosition(new Coordinate(lat, lon), zoom);
+    }
+
     /** Hapus marker pilihan */
     public void clearSelection() {
         if (selectedMarker != null) {
@@ -192,6 +218,47 @@ public class OsmCityMapPanel extends JPanel {
         }
         selectedLat = Double.NaN;
         selectedLon = Double.NaN;
+        map.repaint();
+    }
+
+    /** Set lokasi terpilih dan pasang marker pilihan secara programmatis */
+    public void setSelectedLocation(double lat, double lon) {
+        selectedLat = lat;
+        selectedLon = lon;
+
+        if (selectedMarker != null) map.removeMapMarker(selectedMarker);
+        selectedMarker = new MapMarkerDot(new Coordinate(lat, lon)) {
+            @Override
+            public void paint(Graphics g, Point position, int radius) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                // Lingkaran luar (halo minimalis)
+                g2.setColor(new Color(UITheme.ACCENT.getRed(), UITheme.ACCENT.getGreen(), UITheme.ACCENT.getBlue(), 60));
+                g2.fillOval(position.x - 16, position.y - 16, 32, 32);
+                // Titik merah aksen
+                g2.setColor(UITheme.ACCENT);
+                g2.fillOval(position.x - 7, position.y - 7, 14, 14);
+                // Putih tengah
+                g2.setColor(Color.WHITE);
+                g2.fillOval(position.x - 3, position.y - 3, 6, 6);
+                // Label koordinat
+                String label = String.format("%.4f, %.4f", lat, lon);
+                g2.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 11));
+                FontMetrics fm = g2.getFontMetrics();
+                int tw = fm.stringWidth(label) + 10, th = fm.getHeight() + 4;
+                int tx = position.x - tw / 2;
+                int ty = position.y - 26 - th;
+                if (ty < 4) ty = position.y + 18;
+                g2.setColor(UITheme.BG_CARD);
+                g2.fillRoundRect(tx, ty, tw, th, 4, 4);
+                g2.setColor(UITheme.ACCENT);
+                g2.drawRoundRect(tx, ty, tw, th, 4, 4);
+                g2.setColor(UITheme.TEXT_PRIMARY);
+                g2.drawString(label, tx + 5, ty + fm.getAscent() + 2);
+                g2.dispose();
+            }
+        };
+        map.addMapMarker(selectedMarker);
         map.repaint();
     }
 
@@ -327,6 +394,54 @@ public class OsmCityMapPanel extends JPanel {
                 g2.setColor(Color.WHITE);
                 g2.drawString(name, lx + 6, ly + nfm.getAscent() + 2);
             }
+
+            g2.dispose();
+        }
+    }
+
+    // Inner class for painting fire station markers
+    public static class StationMarker extends MapMarkerDot {
+        private final model.FireStation station;
+
+        public StationMarker(Coordinate coord, model.FireStation station) {
+            super(coord);
+            this.station = station;
+        }
+
+        public model.FireStation getStation() {
+            return station;
+        }
+
+        @Override
+        public void paint(Graphics g, Point position, int radius) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            // Pos Induk = Indigo/Blue, Pos Pembantu = Slate/Cool Gray
+            Color badgeBg = station.isInduk() ? new Color(15, 82, 186) : new Color(100, 110, 120);
+            Color borderCol = Color.WHITE;
+
+            // Draw outer shadow
+            g2.setColor(new Color(0, 0, 0, 70));
+            g2.fillOval(position.x - 9, position.y - 9, 18, 18);
+
+            // Draw station badge
+            g2.setColor(badgeBg);
+            g2.fillOval(position.x - 8, position.y - 8, 16, 16);
+
+            // Draw border
+            g2.setColor(borderCol);
+            g2.setStroke(new BasicStroke(1.5f));
+            g2.drawOval(position.x - 8, position.y - 8, 16, 16);
+
+            // Draw 'I' or 'P' in center
+            g2.setColor(Color.WHITE);
+            g2.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 9));
+            String text = station.isInduk() ? "I" : "P";
+            FontMetrics fm = g2.getFontMetrics();
+            int tx = position.x - fm.stringWidth(text) / 2;
+            int ty = position.y + fm.getAscent() / 2 - 1;
+            g2.drawString(text, tx, ty);
 
             g2.dispose();
         }
