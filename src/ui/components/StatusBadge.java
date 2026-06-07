@@ -63,17 +63,6 @@ public class StatusBadge extends JLabel {
         return new StatusBadge(ts.getLabel(), color);
     }
 
-    public static StatusBadge forCivilianCondition(CivilianCondition cond) {
-        Color color;
-        switch (cond) {
-            case INJURED:   color = UITheme.WARNING; break;
-            case CRITICAL:  color = UITheme.DANGER;  break;
-            case EVACUATED: color = UITheme.INFO;    break;
-            default:        color = UITheme.SUCCESS; break;
-        }
-        return new StatusBadge(cond.getLabel(), color);
-    }
-
     @Override
     protected void paintComponent(Graphics g) {
         Color bg = (Color) getClientProperty("bg");
