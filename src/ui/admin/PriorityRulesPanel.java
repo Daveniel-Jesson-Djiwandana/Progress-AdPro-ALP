@@ -176,7 +176,6 @@ public class PriorityRulesPanel extends JPanel {
         infoCard.setHasBorder(true);
         infoCard.setLayout(new BorderLayout());
         infoCard.setBorder(new EmptyBorder(16, 20, 16, 20));
-        infoCard.setPreferredSize(new Dimension(0, 80));
 
         JLabel infoTitle = new JLabel("  Bagaimana Prioritas Bekerja");
         infoTitle.setIcon(new VectorIcon(VectorIcon.Type.ALERT, 16, UITheme.INFO));

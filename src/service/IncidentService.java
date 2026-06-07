@@ -224,7 +224,8 @@ public class IncidentService {
                 FireStationGraph.Node sNode = new FireStationGraph.Node(station.getName(), station.getLatitude(), station.getLongitude());
                 Double d = dists.get(sNode);
                 if (d != null && station.getAvailableTruckCount() > 0) {
-                    list.add(new StationDistance(station, d));
+                    double dVal = d < 999999.0 ? d : FireStationGraph.haversineDistance(coords[0], coords[1], station.getLatitude(), station.getLongitude());
+                    list.add(new StationDistance(station, dVal));
                 }
             }
             graph.removeNode(incidentNode);

@@ -98,10 +98,16 @@ public class AdminStatusPanel extends JPanel {
                     boolean sel, boolean focus, int row, int col) {
                 int pct = (val instanceof Integer) ? (Integer) val : 0;
                 bar.setValue(pct);
-                bar.setString(pct + "%");
-                bar.setForeground(pct >= 80 ? UITheme.SUCCESS :
-                                  pct >= 40 ? UITheme.ACCENT :
-                                              UITheme.INFO);
+                if (pct > 0 && pct <= 30) {
+                    bar.setString("Perjalanan (" + pct + "%)");
+                    bar.setForeground(UITheme.INFO);
+                } else if (pct > 30) {
+                    bar.setString("Pemadaman (" + pct + "%)");
+                    bar.setForeground(pct >= 80 ? UITheme.SUCCESS : UITheme.ACCENT);
+                } else {
+                    bar.setString(pct + "%");
+                    bar.setForeground(UITheme.INFO);
+                }
                 bar.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
                 return bar;
             }

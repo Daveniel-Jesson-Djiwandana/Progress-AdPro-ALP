@@ -735,7 +735,14 @@ public class DispatchPanel extends JPanel {
         sb.append(row("Waktu",        htmlEscape(inc.getFormattedTime()) + "  (" + htmlEscape(inc.getFormattedDuration()) + " berlalu)"));
         sb.append(row("Pelapor",      htmlEscape(inc.getReportedBy())));
         sb.append(row("Deskripsi",    htmlEscape(inc.getDescription())));
-        sb.append(row("Progress",     inc.getDispatchProgress() + "%  (" + inc.getTrucksAssigned() + " truk)"));
+        int pct = inc.getDispatchProgress();
+        String progressDesc = pct + "%";
+        if (pct > 0 && pct <= 30) {
+            progressDesc = "Perjalanan (" + pct + "%)";
+        } else if (pct > 30) {
+            progressDesc = "Pemadaman (" + pct + "%)";
+        }
+        sb.append(row("Progress",     progressDesc + "  (" + inc.getTrucksAssigned() + " truk)"));
 
         // Dijkstra calculations to show pos terdekat
         double[] coords = FireStationGraph.parseGpsCoord(inc.getLocation());
@@ -758,12 +765,13 @@ public class DispatchPanel extends JPanel {
                 FireStationGraph.Node sNode = new FireStationGraph.Node(station.getName(), station.getLatitude(), station.getLongitude());
                 Double d = dists.get(sNode);
                 if (d != null) {
-                    if (d < minDist) {
-                        minDist = d;
+                    double dVal = d < 999999.0 ? d : FireStationGraph.haversineDistance(coords[0], coords[1], station.getLatitude(), station.getLongitude());
+                    if (dVal < minDist) {
+                        minDist = dVal;
                         closestStation = station;
                     }
                     if (adminStation != null && station.getName().equals(adminStation.getName())) {
-                        distToAdmin = d;
+                        distToAdmin = dVal;
                     }
                 }
             }
@@ -884,7 +892,8 @@ public class DispatchPanel extends JPanel {
                     FireStationGraph.Node sNode = new FireStationGraph.Node(station.getName(), station.getLatitude(), station.getLongitude());
                     Double d = dists.get(sNode);
                     if (d != null && station.getAvailableTruckCount() > 0) {
-                        assistanceList.add(new StationDistance(station, d));
+                        double dVal = d < 999999.0 ? d : FireStationGraph.haversineDistance(coords[0], coords[1], station.getLatitude(), station.getLongitude());
+                        assistanceList.add(new StationDistance(station, dVal));
                     }
                 }
                 graph.removeNode(incidentNode);
@@ -930,9 +939,12 @@ public class DispatchPanel extends JPanel {
         inc.startDispatch();
 
         String admin = adminName();
-        String msg = "<html><b>" + ownDispatch + " kendaraan</b> dikirim dari pos Anda (" + (ownStation != null ? ownStation.getName() : "—") + ").";
+        String ownStationName = ownStation != null ? ownStation.getName() : "—";
+        int totalDispatched = ownDispatch + backupDispatchCount;
+        String msg = "<html><b>Berhasil mengirim total " + totalDispatched + " kendaraan!</b><br>";
+        msg += "- <b>" + ownDispatch + " kendaraan</b> dari pos Anda (" + ownStationName + ")<br>";
         if (backupDispatchCount > 0) {
-            msg += "<br>Bantuan terkirim:" + backupInfo.toString();
+            msg += "- <b>Bantuan terkirim:</b>" + backupInfo.toString();
         }
         if (inc.getSeverity() == IncidentSeverity.TRIPLE_RED && count > ownAvailableLimit && ownAvailable > 0) {
             msg += "<br><br><i>Catatan: 1 regu disisakan di pos Anda sebagai regu jaga.</i>";
@@ -1050,7 +1062,9 @@ public class DispatchPanel extends JPanel {
         Double d = dists.get(sNode);
 
         graph.removeNode(incidentNode);
-        return d != null ? d : Double.MAX_VALUE;
+        double finalDist = (d != null && d < 999999.0) ? d :
+            FireStationGraph.haversineDistance(coords[0], coords[1], station.getLatitude(), station.getLongitude());
+        return finalDist;
     }
 
     private String adminName() {

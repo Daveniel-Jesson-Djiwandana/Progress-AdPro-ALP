@@ -253,23 +253,23 @@ public class AutoFirePanel extends JPanel {
         for (model.Firetruck truck : stationTrucks) {
             if (truck.getStatus() == model.TruckStatus.DEPLOYED) {
                 // Deployed truck consumes water and fuel
-                int waterDrain = 300; // liters per tick
+                int waterDrain = 50; // liters per tick (lasts ~1.5 to 2.5 minutes)
                 
                 // Sistem Rotasi Air:
                 // Tipe 5 (Supply Air) di belakang terus mencari sumber air & menyuplai unit depan
                 if (truck.getType() == model.FiretruckType.TYPE_5_WATER_SUPPLY) {
                     waterDrain = 0; // Supply air mencari air eksternal, airnya sendiri stabil/tidak terkuras habis
                 } else if (deployedSupplyTrucks > 0) {
-                    waterDrain = 50; // Konsumsi air unit depan melambat karena dibantu supply
+                    waterDrain = 10; // Konsumsi air unit depan melambat karena dibantu supply
                 }
                 
-                int fuelDrain = 4;    // percent per tick
+                int fuelDrain = 1;    // 1 percent per tick (lasts ~5 minutes of continuous operation)
                 
                 int nextWater = Math.max(0, truck.getCurrentWater() - waterDrain);
                 
                 // Transfer air dari unit supply (Tipe 5) ke unit depan
                 if (deployedSupplyTrucks > 0 && truck.getType() != model.FiretruckType.TYPE_5_WATER_SUPPLY) {
-                    nextWater = Math.min(truck.getWaterCapacity(), nextWater + 150);
+                    nextWater = Math.min(truck.getWaterCapacity(), nextWater + 30);
                 }
                 
                 int nextFuel  = Math.max(0, truck.getFuelLevel() - fuelDrain);
@@ -295,11 +295,34 @@ public class AutoFirePanel extends JPanel {
         // 2. Advance progress of incidents and auto-resolve
         for (Incident inc : service.IncidentService.getActiveIncidents()) {
             if (inc.getStatus() == model.IncidentStatus.DISPATCHED && inc.getTrucksAssigned() > 0) {
-                int step = Math.max(2, inc.getTrucksAssigned() * 4);
-                inc.advanceProgress(step);
+                if (inc.getDispatchStartTime() == null) {
+                    inc.startDispatch();
+                }
+                long elapsed = java.time.Duration.between(inc.getDispatchStartTime(), java.time.LocalDateTime.now()).getSeconds();
+                
+                int travelTime = 30; // seconds spent traveling to the scene
+                int intensity = inc.getFireIntensity();
+                int trucks = Math.max(1, inc.getTrucksAssigned());
+                
+                // Extinguishing time depends on fire intensity and number of trucks assigned
+                double extinguishingTime = (intensity * 18.0) / trucks;
+                
+                int nextProgress = 0;
+                if (elapsed <= travelTime) {
+                    // Phase 1: En Route (0% to 30%)
+                    nextProgress = (int) ((elapsed * 30.0) / travelTime);
+                } else {
+                    // Phase 2: On Scene / Extinguishing (30% to 100%)
+                    double handlingElapsed = elapsed - travelTime;
+                    nextProgress = 30 + (int) ((handlingElapsed * 70.0) / extinguishingTime);
+                }
+                
+                // Cap progress at 100%
+                nextProgress = Math.min(100, nextProgress);
+                inc.setDispatchProgress(nextProgress);
                 changed = true;
 
-                if (inc.getDispatchProgress() >= 99) {
+                if (nextProgress >= 100) {
                     // Auto-resolve!
                     int toFree = inc.getTrucksAssigned();
                     ArrayList<model.Firetruck> deployed = new ArrayList<>();

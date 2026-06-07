@@ -68,7 +68,7 @@ public class ReportIncidentPanel extends JPanel {
             @Override public void doLayout() {
                 int w = getWidth(), h = getHeight();
                 mapScroll.setBounds(0, 0, w, h);
-                int sw = 300;
+                int sw = 360;
                 if (sidebarPanel.isVisible())
                     sidebarPanel.setBounds(w - sw, 0, sw, h);
                 zoomBar.setBounds(8, 8, 110, 30);
@@ -187,7 +187,7 @@ public class ReportIncidentPanel extends JPanel {
         int row = 0;
 
         // Pencarian Alamat / Bangunan (Geocoding)
-        JTextField tfSearch = new JTextField();
+        JTextField tfSearch = new JTextField(15);
         tfSearch.setFont(UITheme.FONT_BODY);
         tfSearch.setBackground(UITheme.BG_DARK);
         tfSearch.setForeground(UITheme.TEXT_MUTED);
@@ -338,6 +338,7 @@ public class ReportIncidentPanel extends JPanel {
         scroll.getViewport().setOpaque(false);
         scroll.setBorder(null);
         scroll.getVerticalScrollBar().setUnitIncrement(12);
+        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
         lblResult = new JLabel(" ");
         lblResult.setFont(UITheme.FONT_BODY);
@@ -497,7 +498,7 @@ public class ReportIncidentPanel extends JPanel {
     }
 
     private JTextField tf() {
-        JTextField f = new JTextField();
+        JTextField f = new JTextField(15);
         f.setFont(UITheme.FONT_BODY);
         f.setBackground(UITheme.BG_DARK);
         f.setForeground(UITheme.TEXT_PRIMARY);
@@ -546,7 +547,7 @@ public class ReportIncidentPanel extends JPanel {
 
     /** Render the address label — truncated with "..." or full wrapped */
     private void updateAddressLabel() {
-        int MAX_ADDR_LEN = 40;
+        int MAX_ADDR_LEN = 45;
         if (fullAddress == null || fullAddress.isEmpty()) {
             lblAddress.setText("Klik peta untuk deteksi alamat...");
             return;
@@ -557,8 +558,9 @@ public class ReportIncidentPanel extends JPanel {
         }
         String escaped = fullAddress.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
         if (!addressExpanded && fullAddress.length() > MAX_ADDR_LEN) {
-            String shortAddr = escaped.substring(0, MAX_ADDR_LEN);
-            lblAddress.setText("<html><body style='width:240px'>" + shortAddr + "… <i style='color:#FFB347'>(klik untuk lihat lengkap)</i></body></html>");
+            String truncated = fullAddress.substring(0, MAX_ADDR_LEN);
+            String escapedTruncated = truncated.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+            lblAddress.setText("<html><body style='width:240px'>" + escapedTruncated + "… <i style='color:#FFB347'>(klik untuk lihat lengkap)</i></body></html>");
         } else {
             lblAddress.setText("<html><body style='width:240px'>" + escaped + "</body></html>");
         }
