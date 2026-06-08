@@ -9,19 +9,21 @@ public class FireStationGraph {
     private static final Pattern SIM_PAT = Pattern.compile("\\[(\\d+),(\\d+)\\]");
 
     public static double[] parseGpsCoord(String loc) {
-        if (loc == null) return null;
-        
-        // 1. Try GPS pattern first (e.g. Lat: -7.25, Lon: 112.75)
+        if (loc == null)
+            return null;
+
+        // parsing jadi array kalau ada lat dan lon
         Matcher mGps = GPS_PAT.matcher(loc);
         if (mGps.find()) {
             try {
                 double lat = Double.parseDouble(mGps.group(1));
                 double lon = Double.parseDouble(mGps.group(2));
-                return new double[]{lat, lon};
-            } catch (NumberFormatException ignored) {}
+                return new double[] { lat, lon };
+            } catch (NumberFormatException ignored) {
+            }
         }
-        
-        // 2. Try raw Lat, Lon comma-separated fallback (e.g. "-7.25, 112.75")
+
+        // pure parsing raw lat lon
         String[] parts = loc.split(",");
         if (parts.length >= 2) {
             try {
@@ -30,24 +32,26 @@ public class FireStationGraph {
                 double lat = Double.parseDouble(latStr);
                 double lon = Double.parseDouble(lonStr);
                 if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
-                    return new double[]{lat, lon};
+                    return new double[] { lat, lon };
                 }
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
         }
 
-        // 3. Try simulated grid pattern [x,y] (e.g. "ITS [250,450]")
+        // simulasi grid tapi sudah gk dipake
         Matcher mSim = SIM_PAT.matcher(loc);
         if (mSim.find()) {
             try {
                 double rx = Double.parseDouble(mSim.group(1));
                 double ry = Double.parseDouble(mSim.group(2));
-                // Map [0,1000] grid to Surabaya geographical coordinate bounding box:
+                //Surabaya grid:
                 // Lat: -7.20 (y=0) to -7.35 (y=1000)
                 // Lon: 112.60 (x=0) to 112.85 (x=1000)
                 double lat = -7.20 - (ry / 1000.0) * 0.15;
                 double lon = 112.60 + (rx / 1000.0) * 0.25;
-                return new double[]{lat, lon};
-            } catch (NumberFormatException ignored) {}
+                return new double[] { lat, lon };
+            } catch (NumberFormatException ignored) {
+            }
         }
 
         return null;
@@ -66,8 +70,10 @@ public class FireStationGraph {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
             Node node = (Node) o;
             return id.equals(node.id);
         }
@@ -80,7 +86,7 @@ public class FireStationGraph {
 
     public static class Edge {
         public Node target;
-        public double weight; // distance in km
+        public double weight;
 
         public Edge(Node target, double weight) {
             this.target = target;
@@ -102,7 +108,7 @@ public class FireStationGraph {
         if (n1 != null && n2 != null) {
             double distance = haversineDistance(n1.latitude, n1.longitude, n2.latitude, n2.longitude);
             adjList.get(n1).add(new Edge(n2, distance));
-            adjList.get(n2).add(new Edge(n1, distance)); // bidirectional
+            adjList.get(n2).add(new Edge(n1, distance));
         }
     }
 
@@ -119,15 +125,12 @@ public class FireStationGraph {
         double dLat = Math.toRadians(lat2 - lat1);
         double dLon = Math.toRadians(lon2 - lon1);
         double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                   Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
-                   Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     }
 
-    /**
-     * Finds the closest node in the graph to the given coordinates.
-     */
     public Node findClosestNode(double lat, double lon) {
         Node closest = null;
         double minDistance = Double.MAX_VALUE;
@@ -141,9 +144,6 @@ public class FireStationGraph {
         return closest;
     }
 
-    /**
-     * Calculates the shortest path distances from a source node to all other nodes using Dijkstra.
-     */
     public Map<Node, Double> dijkstra(Node source) {
         Map<Node, Double> distances = new HashMap<>();
         for (Node node : adjList.keySet()) {
@@ -159,7 +159,8 @@ public class FireStationGraph {
             Node u = current.node;
             double distU = current.distance;
 
-            if (distU > distances.get(u)) continue;
+            if (distU > distances.get(u))
+                continue;
 
             List<Edge> neighbors = adjList.get(u);
             if (neighbors != null) {
@@ -187,18 +188,15 @@ public class FireStationGraph {
         }
     }
 
-    /**
-     * Creates and initializes the static Surabaya road network graph.
-     */
     public static FireStationGraph createSurabayaNetwork(List<FireStation> stations) {
         FireStationGraph graph = new FireStationGraph();
 
-        // 1. Add 15 fire station nodes
+        //tambah node firestations
         for (FireStation s : stations) {
             graph.addNode(new Node(s.getName(), s.getLatitude(), s.getLongitude()));
         }
 
-        // 2. Add main intersection nodes in Surabaya
+        //tambah junction utama
         Node iWonokromo = new Node("Wonokromo Junction", -7.30150, 112.73650);
         Node iGubeng = new Node("Gubeng Junction", -7.27250, 112.75380);
         Node iTunjungan = new Node("Tunjungan Junction", -7.25950, 112.73880);
@@ -208,15 +206,17 @@ public class FireStationGraph {
         Node iWiyungKp = new Node("Wiyung-Karangpilang Junction", -7.31500, 112.69120);
         Node iDemakPerak = new Node("Demak-Perak Junction", -7.24100, 112.72120);
 
-        for (Node i : new Node[]{iWonokromo, iGubeng, iTunjungan, iDarmo, iKenjeranMerr, iRungkutMerr, iWiyungKp, iDemakPerak}) {
+        for (Node i : new Node[] { iWonokromo, iGubeng, iTunjungan, iDarmo, iKenjeranMerr, iRungkutMerr, iWiyungKp,
+                iDemakPerak }) {
             graph.addNode(i);
         }
 
-        // 3. Connect nodes with road network edges
+        //connect
         // Bubutan (1) & Pasar Turi (2) -> Tunjungan
         graph.addEdge("Dinas Pemadam Kebakaran & Penyelamatan Surabaya", "Tunjungan Junction");
         graph.addEdge("Dinas Pemadam Kebakaran Kota Surabaya – Pos Pasar Turi/Bubutan", "Tunjungan Junction");
-        graph.addEdge("Dinas Pemadam Kebakaran & Penyelamatan Surabaya", "Dinas Pemadam Kebakaran Kota Surabaya – Pos Pasar Turi/Bubutan");
+        graph.addEdge("Dinas Pemadam Kebakaran & Penyelamatan Surabaya",
+                "Dinas Pemadam Kebakaran Kota Surabaya – Pos Pasar Turi/Bubutan");
 
         // Perak Barat (3) -> Demak-Perak
         graph.addEdge("Pos Damkar Perak Barat", "Demak-Perak Junction");

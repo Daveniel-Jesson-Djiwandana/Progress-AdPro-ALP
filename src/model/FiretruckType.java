@@ -22,5 +22,3 @@ public enum FiretruckType {
         return label;
     }
 }
-
-// Trigger recompile

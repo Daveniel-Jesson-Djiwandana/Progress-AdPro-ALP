@@ -33,7 +33,7 @@ public class Admin extends Account {
 
     public void manage_firetruck_resources() {}
 
-    //Getter
+
     @Override
     public String getName() {
         return name;
