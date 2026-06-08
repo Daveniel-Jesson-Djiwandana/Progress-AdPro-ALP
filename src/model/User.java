@@ -4,6 +4,7 @@ public class User extends Account {
     private String name;
     private String email;
     private String phoneNumber;
+
     public User(String name, String email, String username, String password, String phoneNumber, String role) {
         super(username, password);
         this.name = name;
@@ -12,12 +13,15 @@ public class User extends Account {
     }
 
     @Override
-    public void view_incident_status() {}
+    public void view_incident_status() {
+    }
 
     @Override
-    public void view_report_history() {}
+    public void view_report_history() {
+    }
 
-    public void report_fire_incident() {}
+    public void report_fire_incident() {
+    }
 
     // Getter
     @Override
