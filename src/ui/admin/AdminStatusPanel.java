@@ -140,10 +140,29 @@ public class AdminStatusPanel extends JPanel {
         autoRefreshTimer.start();
     }
 
+    private boolean isSuperAdmin() {
+        model.Account acc = database.Database.getCurrentUser();
+        if (acc instanceof model.Admin) {
+            return "Super".equalsIgnoreCase(((model.Admin) acc).getRank());
+        }
+        return false;
+    }
+
     public void refresh() {
         tableModel.setRowCount(0);
         ArrayList<Incident> all = IncidentService.getActiveIncidents();
+        model.FireStation myStation = database.Database.getCurrentAdminStation();
+        boolean superAdmin = isSuperAdmin();
+
+        int count = 0;
         for (Incident inc : all) {
+            if (!superAdmin && myStation != null) {
+                model.FireStation closest = IncidentService.getClosestStation(inc);
+                if (closest == null || !closest.getName().equals(myStation.getName())) {
+                    continue; // Bukan wilayah pos ini
+                }
+            }
+
             tableModel.addRow(new Object[]{
                 inc.getIncidentId(),
                 truncate(inc.getLocation(), 30),
@@ -154,8 +173,9 @@ public class AdminStatusPanel extends JPanel {
                 inc.getStatus(),
                 String.format("%.1f", inc.getPriorityScore())
             });
+            count++;
         }
-        lblCount.setText(all.size() + " insiden aktif");
+        lblCount.setText(count + " insiden aktif");
     }
 
     private String truncate(String s, int max) {

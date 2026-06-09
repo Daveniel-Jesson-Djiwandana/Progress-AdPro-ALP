@@ -206,6 +206,14 @@ public class AutoFirePanel extends JPanel {
         }
     }
 
+    private boolean isSuperAdmin() {
+        model.Account acc = database.Database.getCurrentUser();
+        if (acc instanceof model.Admin) {
+            return "Super".equalsIgnoreCase(((model.Admin) acc).getRank());
+        }
+        return false;
+    }
+
     private void triggerFire(String label) {
         // Use a holder array so the lambda can capture a final reference,
         // then read the incident after randomizeIncident() returns.
@@ -215,6 +223,16 @@ public class AutoFirePanel extends JPanel {
             Incident inc = holder[0];
             if (inc == null)
                 return;
+
+            model.FireStation myStation = database.Database.getCurrentAdminStation();
+            boolean superAdmin = isSuperAdmin();
+            if (!superAdmin && myStation != null) {
+                model.FireStation closest = IncidentService.getClosestStation(inc);
+                if (closest == null || !closest.getName().equals(myStation.getName())) {
+                    return; // Don't update log if it's not under this station's area
+                }
+            }
+
             for (int i = 0; i < logModel.size(); i++) {
                 String entry = logModel.get(i);
                 if (entry.contains(inc.getIncidentId())) {
@@ -229,12 +247,24 @@ public class AutoFirePanel extends JPanel {
                 onNewIncident.run();
         });
         Incident inc = holder[0];
-        String time = new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date());
-        String entry = String.format("[%s] %s — %s [%s]",
-                time, inc.getIncidentId(), inc.getLocation(), inc.getSeverity().getLabel());
-        logModel.add(0, entry); // prepend (newest first)
-        if (logModel.size() > 50)
-            logModel.remove(logModel.size() - 1);
+        model.FireStation myStation = database.Database.getCurrentAdminStation();
+        boolean superAdmin = isSuperAdmin();
+        boolean showLog = true;
+        if (!superAdmin && myStation != null) {
+            model.FireStation closest = IncidentService.getClosestStation(inc);
+            if (closest == null || !closest.getName().equals(myStation.getName())) {
+                showLog = false;
+            }
+        }
+
+        if (showLog) {
+            String time = new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date());
+            String entry = String.format("[%s] %s — %s [%s]",
+                    time, inc.getIncidentId(), inc.getLocation(), inc.getSeverity().getLabel());
+            logModel.add(0, entry); // prepend (newest first)
+            if (logModel.size() > 50)
+                logModel.remove(logModel.size() - 1);
+        }
         if (onNewIncident != null)
             onNewIncident.run();
     }

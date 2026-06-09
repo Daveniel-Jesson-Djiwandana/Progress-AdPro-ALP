@@ -23,6 +23,8 @@ public class AdminHistoryPanel extends JPanel {
             "ID Insiden", "Lokasi", "Tingkat", "Kendaraan", "Diselesaikan oleh", "Waktu Selesai"
     };
 
+    private final ArrayList<ReportHistory> filteredHistory = new ArrayList<>();
+
     public AdminHistoryPanel() {
         setBackground(UITheme.BG_DARK);
         setLayout(new BorderLayout(0, 16));
@@ -108,10 +110,32 @@ public class AdminHistoryPanel extends JPanel {
         add(split, BorderLayout.CENTER);
     }
 
+    private boolean isSuperAdmin() {
+        model.Account acc = Database.getCurrentUser();
+        if (acc instanceof model.Admin) {
+            return "Super".equalsIgnoreCase(((model.Admin) acc).getRank());
+        }
+        return false;
+    }
+
     public void refresh() {
         tableModel.setRowCount(0);
+        filteredHistory.clear();
+
         ArrayList<ReportHistory> history = Database.getReportHistory();
+        model.FireStation myStation = Database.getCurrentAdminStation();
+        boolean superAdmin = isSuperAdmin();
+
+        int count = 0;
         for (ReportHistory rh : history) {
+            if (!superAdmin && myStation != null) {
+                model.FireStation closest = service.IncidentService.getClosestStation(rh.getIncident());
+                if (closest == null || !closest.getName().equals(myStation.getName())) {
+                    continue; // Bukan wilayah pos ini
+                }
+            }
+
+            filteredHistory.add(rh);
             tableModel.addRow(new Object[] {
                     rh.getIncident().getIncidentId(),
                     rh.getIncident().getLocation(),
@@ -120,18 +144,16 @@ public class AdminHistoryPanel extends JPanel {
                     rh.getResolvedBy(),
                     rh.getFormattedResolvedTime()
             });
+            count++;
         }
-        lblCount.setText(history.size() + " insiden selesai");
+        lblCount.setText(count + " insiden selesai");
         taDetail.setText("Pilih baris untuk melihat detail sumber daya yang digunakan.");
     }
 
     private void showDetail(int row) {
-        if (row < 0)
+        if (row < 0 || row >= filteredHistory.size())
             return;
-        ArrayList<ReportHistory> history = Database.getReportHistory();
-        if (row >= history.size())
-            return;
-        ReportHistory rh = history.get(row);
+        ReportHistory rh = filteredHistory.get(row);
         StringBuilder sb = new StringBuilder();
         sb.append("Insiden : ").append(rh.getIncident().getIncidentId())
                 .append("  |  Lokasi: ").append(rh.getIncident().getLocation()).append("\n");

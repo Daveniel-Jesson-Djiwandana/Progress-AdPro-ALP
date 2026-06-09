@@ -58,7 +58,7 @@ public class IncidentService {
         Structure structure = new Structure(location, area, victims);
         Incident incident = new Incident(structure, IncidentSeverity.UNDETERMINED, description, intensity, reportedBy);
         Database.addIncident(incident);
-        autoDispatch(incident);
+        // Auto-dispatch dimatikan: dispatch dilakukan manual oleh admin pos
         return null;
     }
 
@@ -75,19 +75,38 @@ public class IncidentService {
         double lat = -7.34 + rng.nextDouble() * 0.12; // range [-7.34, -7.22]
         double lon = 112.63 + rng.nextDouble() * 0.18; // range [112.63, 112.81]
 
-        String initialLoc = String.format("Lat: %.5f, Lon: %.5f (Mencari alamat...)", lat, lon);
+        // Jika user adalah admin pos tertentu (bukan super admin), generate koordinat di dekat posnya
+        FireStation myStation = Database.getCurrentAdminStation();
+        boolean superAdmin = false;
+        Account acc = Database.getCurrentUser();
+        if (acc instanceof Admin) {
+            superAdmin = "Super".equalsIgnoreCase(((Admin) acc).getRank());
+        }
+
+        if (myStation != null && !superAdmin) {
+            double stationLat = myStation.getLatitude();
+            double stationLon = myStation.getLongitude();
+            // Generate random offset within ~1.5km (approx 0.012 degrees)
+            lat = stationLat - 0.01 + rng.nextDouble() * 0.02;
+            lon = stationLon - 0.01 + rng.nextDouble() * 0.02;
+        }
+
+        final double finalLat = lat;
+        final double finalLon = lon;
+
+        String initialLoc = String.format("Lat: %.5f, Lon: %.5f (Mencari alamat...)", finalLat, finalLon);
 
         Structure structure = new Structure(initialLoc, area, victims);
         Incident incident = new Incident(structure, sev, desc, intensity, label);
         Database.addIncident(incident);
-        autoDispatch(incident);
+        // Auto-dispatch dimatikan: dispatch dilakukan manual oleh admin pos
 
         // Perform Nominatim reverse geocoding asynchronously
         new Thread(() -> {
             try {
                 String urlStr = String.format(
                         "https://nominatim.openstreetmap.org/reverse?lat=%.7f&lon=%.7f&format=json&addressdetails=1",
-                        lat, lon);
+                        finalLat, finalLon);
                 java.net.URL url = new java.net.URL(urlStr);
                 java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
@@ -110,15 +129,15 @@ public class IncidentService {
                     if (displayName != null && !displayName.trim().isEmpty()) {
                         String finalAddr = displayName.trim();
                         incident.getStructure()
-                                .setLocation(String.format("Lat: %.5f, Lon: %.5f (%s)", lat, lon, finalAddr));
+                                .setLocation(String.format("Lat: %.5f, Lon: %.5f (%s)", finalLat, finalLon, finalAddr));
                     } else {
-                        incident.getStructure().setLocation(String.format("Lat: %.5f, Lon: %.5f", lat, lon));
+                        incident.getStructure().setLocation(String.format("Lat: %.5f, Lon: %.5f", finalLat, finalLon));
                     }
                 } else {
-                    incident.getStructure().setLocation(String.format("Lat: %.5f, Lon: %.5f", lat, lon));
+                    incident.getStructure().setLocation(String.format("Lat: %.5f, Lon: %.5f", finalLat, finalLon));
                 }
             } catch (Exception e) {
-                incident.getStructure().setLocation(String.format("Lat: %.5f, Lon: %.5f", lat, lon));
+                incident.getStructure().setLocation(String.format("Lat: %.5f, Lon: %.5f", finalLat, finalLon));
             } finally {
                 if (onGeocodeComplete != null) {
                     javax.swing.SwingUtilities.invokeLater(onGeocodeComplete);
@@ -176,6 +195,42 @@ public class IncidentService {
 
     public static Incident autoRandomize() {
         return randomizeIncident("Sistem Otomatis (Simulasi)", null);
+    }
+
+    /**
+     * Cari pos pemadam terdekat dari sebuah insiden menggunakan Dijkstra/Haversine.
+     * Digunakan oleh panel status & dispatch untuk filter per wilayah pos.
+     * Mengembalikan FireStation terdekat, atau null jika koordinat tidak tersedia.
+     */
+    public static FireStation getClosestStation(Incident inc) {
+        double[] coords = FireStationGraph.parseGpsCoord(inc.getLocation());
+        if (coords == null) return null;
+
+        FireStationGraph graph = Database.getRoadNetwork();
+        FireStationGraph.Node incidentNode = new FireStationGraph.Node("TempClosestSvc", coords[0], coords[1]);
+        graph.addNode(incidentNode);
+        FireStationGraph.Node nearestNode = graph.findClosestNode(coords[0], coords[1]);
+        if (nearestNode != null) graph.addEdge("TempClosestSvc", nearestNode.id);
+        java.util.Map<FireStationGraph.Node, Double> dists = graph.dijkstra(incidentNode);
+
+        FireStation closest = null;
+        double minDist = Double.MAX_VALUE;
+        for (FireStation station : Database.getFireStations()) {
+            FireStationGraph.Node sNode = new FireStationGraph.Node(
+                    station.getName(), station.getLatitude(), station.getLongitude());
+            Double d = dists.get(sNode);
+            if (d != null) {
+                double dVal = d < 999999.0 ? d
+                        : FireStationGraph.haversineDistance(coords[0], coords[1],
+                                station.getLatitude(), station.getLongitude());
+                if (dVal < minDist) {
+                    minDist = dVal;
+                    closest = station;
+                }
+            }
+        }
+        graph.removeNode(incidentNode);
+        return closest;
     }
 
     public static void resolveIncident(Incident incident, String resolvedBy,

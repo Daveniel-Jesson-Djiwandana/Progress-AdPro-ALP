@@ -28,8 +28,6 @@ public class DispatchPanel extends JPanel {
     private JTable            table;
     private JLabel            lblCount;
     private JLabel            lblTrucks;
-    private JToggleButton     btnInRadius;
-    private JToggleButton     btnAllIncidents;
 
     private JLabel     lblRecVal;
     private JTextField tfNotes;
@@ -60,6 +58,8 @@ public class DispatchPanel extends JPanel {
     private JLayeredPane layers;
 
     private Timer autoRefreshTimer;
+    private boolean isRefreshing = false;
+    private String currentIncidentId = null;
 
     // Sidebar collapse/expand state
     private boolean sidebarVisible = true;
@@ -226,27 +226,14 @@ public class DispatchPanel extends JPanel {
         lblTrucks.setFont(UITheme.FONT_SMALL);
         lblTrucks.setForeground(UITheme.SUCCESS);
 
-        btnInRadius = new JToggleButton("Wilayah Saya (≤ 5km)");
-        btnAllIncidents = new JToggleButton("Semua Laporan");
-        btnInRadius.setSelected(true);
+        // Label info scope (pos terdekat / semua pos untuk super admin)
+        JLabel lblScope = new JLabel();
+        lblScope.setFont(UITheme.FONT_SMALL);
+        lblScope.setForeground(UITheme.ACCENT_ORANGE);
 
-        ButtonGroup filterGroup = new ButtonGroup();
-        filterGroup.add(btnInRadius);
-        filterGroup.add(btnAllIncidents);
-
-        for (JToggleButton btn : new JToggleButton[]{btnInRadius, btnAllIncidents}) {
-            btn.setFont(UITheme.FONT_SMALL);
-            btn.setForeground(UITheme.TEXT_SECONDARY);
-            btn.setBackground(UITheme.BG_CARD);
-            btn.setFocusPainted(false);
-            btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            btn.addActionListener(e -> refresh());
-        }
-
-        JPanel filterPanel = new JPanel(new GridLayout(1, 2, 4, 0));
+        JPanel filterPanel = new JPanel(new GridLayout(1, 1, 4, 0));
         filterPanel.setOpaque(false);
-        filterPanel.add(btnInRadius);
-        filterPanel.add(btnAllIncidents);
+        // filterPanel digunakan untuk menjaga layout, scope label ditambahkan di header
 
         // Filter Kategori Bangunan
         cbFilterCategory = new JComboBox<>(new String[]{"Semua Kategori", "Bangunan", "Industri", "Lahan Kosong"});
@@ -282,8 +269,6 @@ public class DispatchPanel extends JPanel {
         header.add(lblCount);
         header.add(lblTrucks);
         header.add(Box.createVerticalStrut(8));
-        header.add(filterPanel);
-        header.add(Box.createVerticalStrut(4));
         header.add(filterRow2);
         header.add(Box.createVerticalStrut(6));
         header.add(btnRefresh);
@@ -339,6 +324,7 @@ public class DispatchPanel extends JPanel {
             table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
 
         table.getSelectionModel().addListSelectionListener(e -> {
+            if (isRefreshing) return;
             if (!e.getValueIsAdjusting()) {
                 updateDetail();
                 mapPanel.setHighlightedRow(table.getSelectedRow());
@@ -654,45 +640,52 @@ public class DispatchPanel extends JPanel {
     }
 
     public void refresh() {
-        int selectedRow = table.getSelectedRow();
+        isRefreshing = true;
+        try {
+            int selectedRow = table.getSelectedRow();
 
-        ArrayList<Incident> sorted = getSortedIncidents();
-        tableModel.setRowCount(0);
-        FireStation adminStation = Database.getCurrentAdminStation();
+            ArrayList<Incident> sorted = getSortedIncidents();
+            tableModel.setRowCount(0);
 
-        for (Incident inc : sorted) {
-            String prefix = "";
-            if (adminStation != null) {
-                double dist = getDijkstraDistance(adminStation, inc);
-                prefix = (dist <= 5.0) ? "• " : "  ";
+            for (Incident inc : sorted) {
+                tableModel.addRow(new Object[]{
+                    "",
+                    inc.getIncidentId(),
+                    truncate(inc.getLocation(), 18),
+                    inc.getSeverity(),
+                    inc.getFireIntensity() + "/10",
+                    String.valueOf(inc.getNumVictimsTrapped()),
+                    inc.getStatus(),
+                    String.format("%.0f", inc.getPriorityScore())
+                });
             }
-            tableModel.addRow(new Object[]{
-                "",
-                prefix + inc.getIncidentId(),
-                truncate(inc.getLocation(), 18),
-                inc.getSeverity(),
-                inc.getFireIntensity() + "/10",
-                String.valueOf(inc.getNumVictimsTrapped()),
-                inc.getStatus(),
-                String.format("%.0f", inc.getPriorityScore())
-            });
+
+            FireStation myStation = Database.getFireStation();
+            int available = myStation != null ? myStation.getAvailableTruckCount() : 0;
+            int total     = myStation != null ? myStation.getFiretrucks().size() : 0;
+            String scopeLabel = isSuperAdmin() ? "(Semua Pos)" : "(Pos Terdekat)";
+            lblCount.setText(sorted.size() + " insiden " + scopeLabel);
+            lblTrucks.setText("Truk tersedia: " + available + " / " + total);
+
+            if (selectedRow >= 0 && selectedRow < tableModel.getRowCount())
+                table.setRowSelectionInterval(selectedRow, selectedRow);
+
+            mapPanel.setIncidents(sorted);
+            mapPanel.repaint();
+        } finally {
+            isRefreshing = false;
         }
-
-        int available = Database.getFireStation() != null ? Database.getFireStation().getAvailableTruckCount() : 0;
-        int total     = Database.getFireStation() != null ? Database.getFireStation().getFiretrucks().size() : 0;
-        lblCount.setText(sorted.size() + " insiden dalam antrian");
-        lblTrucks.setText("Truk tersedia: " + available + " / " + total);
-
-        if (selectedRow >= 0 && selectedRow < tableModel.getRowCount())
-            table.setRowSelectionInterval(selectedRow, selectedRow);
-
-        mapPanel.setIncidents(sorted);
-        mapPanel.repaint();
+        updateDetail(); // Manually update detail after refresh
     }
 
     private void updateDetail() {
+        updateDetail(false);
+    }
+
+    private void updateDetail(boolean forceFormReload) {
         int row = table.getSelectedRow();
         if (row < 0) {
+            currentIncidentId = null;
             detailOverlay.setVisible(false);
             if (lblRecVal != null) {
                 lblRecVal.setText("Pilih insiden...");
@@ -701,8 +694,13 @@ public class DispatchPanel extends JPanel {
             return;
         }
         ArrayList<Incident> sorted = getSortedIncidents();
-        if (row >= sorted.size()) return;
+        if (row >= sorted.size()) {
+            currentIncidentId = null;
+            return;
+        }
         Incident inc = sorted.get(row);
+        boolean incidentChanged = !inc.getIncidentId().equals(currentIncidentId);
+        currentIncidentId = inc.getIncidentId();
 
         lblDetailTitle.setText("Detail: " + inc.getIncidentId() + "  [P" + (row+1) + "]");
 
@@ -801,22 +799,24 @@ public class DispatchPanel extends JPanel {
         }
 
         // Pre-fill admin form dari data yang sudah tersimpan (jika ada)
-        cbSeverityAdmin.setSelectedItem(inc.getSeverity());
-        spCriticalAdmin.setValue(inc.getVictimsCritical());
-        spInjuredAdmin.setValue(inc.getVictimsInjured());
-        spEvacuatedAdmin.setValue(inc.getVictimsEvacuated());
-        spSafeAdmin.setValue(inc.getVictimsSafe());
+        if (incidentChanged || forceFormReload) {
+            cbSeverityAdmin.setSelectedItem(inc.getSeverity());
+            spCriticalAdmin.setValue(inc.getVictimsCritical());
+            spInjuredAdmin.setValue(inc.getVictimsInjured());
+            spEvacuatedAdmin.setValue(inc.getVictimsEvacuated());
+            spSafeAdmin.setValue(inc.getVictimsSafe());
 
-        if (inc.getBuildingMaterial() != null) cbMaterial.setSelectedItem(inc.getBuildingMaterial());
-        else cbMaterial.setSelectedIndex(0);
-        if (inc.getDamageLevel() != null) cbDamage.setSelectedItem(inc.getDamageLevel());
-        else cbDamage.setSelectedIndex(0);
+            if (inc.getBuildingMaterial() != null) cbMaterial.setSelectedItem(inc.getBuildingMaterial());
+            else cbMaterial.setSelectedIndex(0);
+            if (inc.getDamageLevel() != null) cbDamage.setSelectedItem(inc.getDamageLevel());
+            else cbDamage.setSelectedIndex(0);
 
-        // Show/hide area admin field based on category
-        boolean isLahanKosong = inc.getBuildingCategory() == BuildingCategory.LAHAN_KOSONG;
-        areaAdminPanel.setVisible(isLahanKosong);
-        if (isLahanKosong) {
-            spAreaAdmin.setValue((int) inc.getFireSpreadArea());
+            // Show/hide area admin field based on category
+            boolean isLahanKosong = inc.getBuildingCategory() == BuildingCategory.LAHAN_KOSONG;
+            areaAdminPanel.setVisible(isLahanKosong);
+            if (isLahanKosong) {
+                spAreaAdmin.setValue((int) inc.getFireSpreadArea());
+            }
         }
 
         detailOverlay.setVisible(true);
@@ -985,6 +985,55 @@ public class DispatchPanel extends JPanel {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /** Kembalikan true jika admin yang sedang login adalah Super Admin */
+    private boolean isSuperAdmin() {
+        Account acc = Database.getCurrentUser();
+        if (acc instanceof Admin) {
+            return "Super".equalsIgnoreCase(((Admin) acc).getRank());
+        }
+        return false;
+    }
+
+    /**
+     * Cari pos pemadam terdekat dari sebuah insiden menggunakan Dijkstra/Haversine.
+     * Mengembalikan FireStation terdekat, atau null jika tidak ada data.
+     */
+    private FireStation getClosestStation(Incident inc) {
+        double[] coords = FireStationGraph.parseGpsCoord(inc.getLocation());
+        FireStation closest = null;
+        double minDist = Double.MAX_VALUE;
+
+        if (coords != null) {
+            FireStationGraph graph = Database.getRoadNetwork();
+            FireStationGraph.Node incidentNode = new FireStationGraph.Node("TempClosest", coords[0], coords[1]);
+            graph.addNode(incidentNode);
+            FireStationGraph.Node nearestNode = graph.findClosestNode(coords[0], coords[1]);
+            if (nearestNode != null) graph.addEdge("TempClosest", nearestNode.id);
+            Map<FireStationGraph.Node, Double> dists = graph.dijkstra(incidentNode);
+
+            for (FireStation station : Database.getFireStations()) {
+                FireStationGraph.Node sNode = new FireStationGraph.Node(station.getName(), station.getLatitude(), station.getLongitude());
+                Double d = dists.get(sNode);
+                if (d != null) {
+                    double dVal = d < 999999.0 ? d : FireStationGraph.haversineDistance(coords[0], coords[1], station.getLatitude(), station.getLongitude());
+                    if (dVal < minDist) {
+                        minDist = dVal;
+                        closest = station;
+                    }
+                }
+            }
+            graph.removeNode(incidentNode);
+        } else {
+            // Fallback: Haversine langsung (jika koordinat tidak bisa di-parse)
+            // Ambil pos yang paling dekat secara garis lurus
+            for (FireStation station : Database.getFireStations()) {
+                // Tanpa koordinat insiden, tidak bisa hitung jarak — kembalikan null
+            }
+        }
+        return closest;
+    }
+
     private ArrayList<Incident> getSortedIncidents() {
         PriorityQueue<Incident> q = new PriorityQueue<>(Database.getIncidentQueue());
         ArrayList<Incident> list  = new ArrayList<>();
@@ -993,8 +1042,21 @@ public class DispatchPanel extends JPanel {
         String filterCat = cbFilterCategory != null ? (String) cbFilterCategory.getSelectedItem() : "Semua Kategori";
         String filterSev = cbFilterSeverity != null ? (String) cbFilterSeverity.getSelectedItem() : "Semua Keparahan";
 
+        // Pos admin yang sedang login (null jika tidak ada)
+        FireStation myStation = Database.getCurrentAdminStation();
+        boolean superAdmin = isSuperAdmin();
+
         while (!q.isEmpty()) {
             Incident inc = q.poll();
+
+            // ── Filter: hanya tampilkan incident yang pos terdekatnya adalah pos admin ini
+            //    Kecuali super admin, yang bisa melihat semua laporan.
+            if (!superAdmin && myStation != null) {
+                FireStation closest = getClosestStation(inc);
+                if (closest == null || !closest.getName().equals(myStation.getName())) {
+                    continue; // Bukan wilayah pos ini
+                }
+            }
 
             // Filter by category
             if (!"Semua Kategori".equals(filterCat)) {
@@ -1128,6 +1190,7 @@ public class DispatchPanel extends JPanel {
             "Tersimpan", JOptionPane.INFORMATION_MESSAGE);
         
         refresh();
+        updateDetail(true); // Re-populate form dari data yang sudah tersimpan
     }
 
     private JPanel createLabeledSpinner(String labelText, JSpinner spinner) {

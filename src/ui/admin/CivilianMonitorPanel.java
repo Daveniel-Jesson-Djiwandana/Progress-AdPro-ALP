@@ -232,6 +232,14 @@ public class CivilianMonitorPanel extends JPanel {
         autoRefreshTimer.start();
     }
 
+    private boolean isSuperAdmin() {
+        Account acc = Database.getCurrentUser();
+        if (acc instanceof Admin) {
+            return "Super".equalsIgnoreCase(((Admin) acc).getRank());
+        }
+        return false;
+    }
+
     public void refresh() {
         int selectedRow = table.getSelectedRow();
         activeIncidents.clear();
@@ -239,8 +247,18 @@ public class CivilianMonitorPanel extends JPanel {
 
         int total = 0, critical = 0, injured = 0, evacuated = 0, safe = 0;
 
+        FireStation myStation = Database.getCurrentAdminStation();
+        boolean superAdmin = isSuperAdmin();
+
         ArrayList<Incident> active = IncidentService.getActiveIncidents();
         for (Incident inc : active) {
+            if (!superAdmin && myStation != null) {
+                FireStation closest = IncidentService.getClosestStation(inc);
+                if (closest == null || !closest.getName().equals(myStation.getName())) {
+                    continue; // Bukan wilayah pos ini
+                }
+            }
+
             activeIncidents.add(inc);
             tableModel.addRow(new Object[] {
                     inc.getIncidentId(),

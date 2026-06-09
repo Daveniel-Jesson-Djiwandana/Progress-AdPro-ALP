@@ -32,6 +32,12 @@ public class ReportIncidentPanel extends JPanel {
     private double mapLat = Double.NaN, mapLon = Double.NaN;
     private JPanel sidebarPanel;
 
+    // Geocoding throttle: debounce + cache untuk menghindari HTTP 429
+    private javax.swing.Timer geocodeDebounceTimer;
+    private double lastGeocodedLat = Double.NaN;
+    private double lastGeocodedLon = Double.NaN;
+    private static final double GEOCODE_CACHE_THRESHOLD = 0.00005; // ~5 meter
+
     public ReportIncidentPanel(UserDashboard parent) {
         this.parent = parent;
         setLayout(new BorderLayout());
@@ -293,7 +299,7 @@ public class ReportIncidentPanel extends JPanel {
         row = addField(form, gc, row, "Alamat Lokasi (Nominatim)", lblAddress);
 
         // Korban Terjebak (Luas Area diisi admin di lapangan, bukan oleh warga)
-        spVictims = sp(0, 0, 999, 1);
+        spVictims = sp(0, 0, 999999999, 1);
         row = addField(form, gc, row, "Korban Terjebak", spVictims);
 
         // ── Kategori Bangunan ─────────────────────────────────────────────────
@@ -498,6 +504,10 @@ public class ReportIncidentPanel extends JPanel {
         lblResult.setText(" ");
         mapLat = Double.NaN;
         mapLon = Double.NaN;
+        // Reset geocode cache
+        lastGeocodedLat = Double.NaN;
+        lastGeocodedLon = Double.NaN;
+        if (geocodeDebounceTimer != null) geocodeDebounceTimer.stop();
         if (mapPanel != null)
             mapPanel.clearSelection();
     }
@@ -612,13 +622,39 @@ public class ReportIncidentPanel extends JPanel {
     }
 
     private void reverseGeocode(double lat, double lon) {
+        // Cek cache: jika koordinat hampir sama dengan yang terakhir di-geocode, skip
+        if (!Double.isNaN(lastGeocodedLat) && !Double.isNaN(lastGeocodedLon)) {
+            double dLat = Math.abs(lat - lastGeocodedLat);
+            double dLon = Math.abs(lon - lastGeocodedLon);
+            if (dLat < GEOCODE_CACHE_THRESHOLD && dLon < GEOCODE_CACHE_THRESHOLD) {
+                return; // Koordinat sama, tidak perlu request ulang
+            }
+        }
+
         fullAddress = "Mencari alamat...";
         addressExpanded = false;
         lblAddress.setText("Mencari alamat...");
         lblAddress.setForeground(UITheme.TEXT_SECONDARY);
 
+        // Debounce: batalkan timer sebelumnya, tunggu 800ms sebelum request
+        if (geocodeDebounceTimer != null && geocodeDebounceTimer.isRunning()) {
+            geocodeDebounceTimer.stop();
+        }
+        geocodeDebounceTimer = new javax.swing.Timer(800, e -> {
+            geocodeDebounceTimer.stop();
+            doReverseGeocodeRequest(lat, lon, false);
+        });
+        geocodeDebounceTimer.setRepeats(false);
+        geocodeDebounceTimer.start();
+    }
+
+    /** Lakukan HTTP request reverse geocoding (dipanggil setelah debounce) */
+    private void doReverseGeocodeRequest(double lat, double lon, boolean isRetry) {
         new Thread(() -> {
             try {
+                if (isRetry) {
+                    Thread.sleep(2000); // Tunggu 2 detik sebelum retry setelah 429
+                }
                 String urlStr = String.format(
                         "https://nominatim.openstreetmap.org/reverse?lat=%.7f&lon=%.7f&format=json&addressdetails=1",
                         lat, lon);
@@ -643,6 +679,8 @@ public class ReportIncidentPanel extends JPanel {
                     String displayName = extractJsonString(response.toString(), "display_name");
                     if (displayName != null && !displayName.trim().isEmpty()) {
                         final String finalAddr = displayName.trim();
+                        lastGeocodedLat = lat; // Simpan ke cache
+                        lastGeocodedLon = lon;
                         SwingUtilities.invokeLater(() -> {
                             setAddressDisplay(finalAddr, UITheme.TEXT_PRIMARY);
                         });
@@ -651,6 +689,13 @@ public class ReportIncidentPanel extends JPanel {
                             setAddressDisplay("Alamat tidak ditemukan", UITheme.TEXT_SECONDARY);
                         });
                     }
+                } else if (respCode == 429 && !isRetry) {
+                    // Rate limited — retry sekali setelah 2 detik
+                    SwingUtilities.invokeLater(() -> {
+                        lblAddress.setText("Terlalu banyak request, mencoba ulang...");
+                        lblAddress.setForeground(UITheme.TEXT_SECONDARY);
+                    });
+                    doReverseGeocodeRequest(lat, lon, true);
                 } else {
                     SwingUtilities.invokeLater(() -> {
                         setAddressDisplay("Gagal mendapatkan alamat (HTTP " + respCode + ")", UITheme.DANGER);
@@ -751,6 +796,15 @@ public class ReportIncidentPanel extends JPanel {
                         lblResult.setForeground(UITheme.SUCCESS);
                         lblResult.setText("Ditemukan: " + query);
                     });
+                } else if (respCode == 429) {
+                    // Rate limited — tampilkan pesan dan retry sekali setelah 2 detik
+                    SwingUtilities.invokeLater(() -> {
+                        lblResult.setForeground(UITheme.TEXT_SECONDARY);
+                        lblResult.setText("Terlalu banyak request, mencoba ulang...");
+                    });
+                    try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
+                    // Retry sekali
+                    SwingUtilities.invokeLater(() -> performSearch(query));
                 } else {
                     SwingUtilities.invokeLater(() -> {
                         lblResult.setForeground(UITheme.DANGER);
