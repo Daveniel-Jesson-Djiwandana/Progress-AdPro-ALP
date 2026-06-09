@@ -1,0 +1,2 @@
+user|albert|halo123|albert B|halo@gmail.com|0182389789
+user|Jesson|123456|Jesson|jesson@gmail.com|123
