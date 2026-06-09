@@ -13,12 +13,6 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-/**
- * FiretruckResourcePanel — Manage Firetruck Resources (Fitur 3.10)
- *
- * View all firetrucks with status, water/fuel levels, equipment, and crew.
- * Admin can refill resources (water/fuel) and change status (Standby / Maintenance).
- */
 public class FiretruckResourcePanel extends JPanel {
 
     private JPanel cardsContainer;
@@ -31,10 +25,10 @@ public class FiretruckResourcePanel extends JPanel {
     private JLabel lblEditPlate;
     private JLabel lblEditType;
     private JLabel lblStatusInfo;
-    
+
     private JLabel lblWaterVal;
     private JLabel lblFuelVal;
-    
+
     private JLabel lblFoamVal, lblHoseVal, lblLadderVal, lblOxygenVal, lblFirstAidVal;
 
     private RoundedButton btnRefill;
@@ -54,7 +48,8 @@ public class FiretruckResourcePanel extends JPanel {
         title.setFont(UITheme.FONT_HEADING);
         title.setForeground(UITheme.TEXT_PRIMARY);
 
-        JLabel sub = new JLabel("Pantau kondisi logistik kendaraan. Kirim kendaraan kosong kembali ke pos untuk isi ulang.");
+        JLabel sub = new JLabel(
+                "Pantau kondisi logistik kendaraan. Kirim kendaraan kosong kembali ke pos untuk isi ulang.");
         sub.setFont(UITheme.FONT_BODY);
         sub.setForeground(UITheme.TEXT_SECONDARY);
 
@@ -89,6 +84,8 @@ public class FiretruckResourcePanel extends JPanel {
         scroll.getViewport().setOpaque(false);
         scroll.setBorder(null);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
+
+        // scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
 
         // ── Actions overlay ──
         editOverlay = buildEditOverlay();
@@ -134,9 +131,9 @@ public class FiretruckResourcePanel extends JPanel {
         card.setHasBorder(true);
         card.setLayout(new BorderLayout(0, 10));
         card.setBorder(new EmptyBorder(16, 20, 16, 20));
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 240));
 
-        // ── TOP ROW ──────────────────────────────────────────────────────────
+        // TOP ROW
         JPanel topRow = new JPanel(new BorderLayout(16, 0));
         topRow.setOpaque(false);
 
@@ -144,7 +141,7 @@ public class FiretruckResourcePanel extends JPanel {
         JPanel leftPanel = new JPanel();
         leftPanel.setOpaque(false);
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
-        leftPanel.setPreferredSize(new Dimension(150, 0));
+        leftPanel.setPreferredSize(new Dimension(300, 0));
 
         JLabel lblId = new JLabel(truck.getId());
         lblId.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 20));
@@ -183,7 +180,7 @@ public class FiretruckResourcePanel extends JPanel {
         // Right: Resources + Actions button
         JPanel rightPanel = new JPanel();
         rightPanel.setOpaque(false);
-        rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
+        rightPanel.setLayout(new BorderLayout(0, 8));
 
         JLabel lblResources = new JLabel("Perlengkapan:");
         lblResources.setFont(UITheme.FONT_SMALL);
@@ -193,7 +190,8 @@ public class FiretruckResourcePanel extends JPanel {
         StringBuilder resText = new StringBuilder("<html>");
         HashMap<Resource, Integer> res = truck.getResources();
         for (Resource r : Resource.values()) {
-            if (r == Resource.WATER) continue;
+            if (r == Resource.WATER)
+                continue;
             int qty = res.getOrDefault(r, 0);
             resText.append(r.getDisplayName()).append(": <b>").append(qty).append("</b>  ");
         }
@@ -209,7 +207,8 @@ public class FiretruckResourcePanel extends JPanel {
             crewText.append("<i>Belum ditugaskan</i>");
         } else {
             for (int i = 0; i < truck.getCrew().size(); i++) {
-                if (i > 0) crewText.append(", ");
+                if (i > 0)
+                    crewText.append(", ");
                 crewText.append(truck.getCrew().get(i).getName());
             }
         }
@@ -221,22 +220,25 @@ public class FiretruckResourcePanel extends JPanel {
 
         RoundedButton btnEdit = new RoundedButton("  Tindakan", UITheme.ACCENT_ORANGE);
         btnEdit.setIcon(new VectorIcon(VectorIcon.Type.WRENCH, 14, Color.WHITE));
-        btnEdit.setMaximumSize(new Dimension(130, 32));
-        btnEdit.setAlignmentX(RIGHT_ALIGNMENT);
+        btnEdit.setPreferredSize(new Dimension(85, 32));
         btnEdit.addActionListener(e -> openEdit(truck));
 
-        rightPanel.add(lblResources);
-        rightPanel.add(Box.createVerticalStrut(2));
-        rightPanel.add(lblResDetail);
-        rightPanel.add(Box.createVerticalStrut(4));
-        rightPanel.add(lblCrew);
-        rightPanel.add(Box.createVerticalGlue());
-        rightPanel.add(btnEdit);
+        JPanel resourcesBox = new JPanel();
+        resourcesBox.setOpaque(false);
+        resourcesBox.setLayout(new BoxLayout(resourcesBox, BoxLayout.Y_AXIS));
+        resourcesBox.add(lblResources);
+        resourcesBox.add(Box.createVerticalStrut(2));
+        resourcesBox.add(lblResDetail);
+        resourcesBox.add(Box.createVerticalStrut(4));
+        resourcesBox.add(lblCrew);
 
-        topRow.add(leftPanel,  BorderLayout.WEST);
+        rightPanel.add(resourcesBox, BorderLayout.CENTER);
+        rightPanel.add(btnEdit, BorderLayout.SOUTH);
+
+        topRow.add(leftPanel, BorderLayout.WEST);
         topRow.add(rightPanel, BorderLayout.CENTER);
 
-        // ── BOTTOM ROW: level bars spanning full width ───────────────────────
+        // BOTTOM ROW: level bars spanning full width
         JPanel barsRow = new JPanel();
         barsRow.setOpaque(false);
         barsRow.setLayout(new BoxLayout(barsRow, BoxLayout.Y_AXIS));
@@ -248,7 +250,7 @@ public class FiretruckResourcePanel extends JPanel {
         barsRow.add(buildLevelBar("BBM", truck.getFuelLevel(), 100,
                 truck.getFuelLevel() < 30 ? UITheme.DANGER : UITheme.SUCCESS, "%"));
 
-        card.add(topRow,  BorderLayout.CENTER);
+        card.add(topRow, BorderLayout.CENTER);
         card.add(barsRow, BorderLayout.SOUTH);
 
         return card;
@@ -343,12 +345,12 @@ public class FiretruckResourcePanel extends JPanel {
 
         // Current Resource details
         lblWaterVal = metricLabel("Air", "0 / 5000 L");
-        lblFuelVal  = metricLabel("BBM", "0%");
-        
-        lblFoamVal     = metricLabel("Busa (Foam)", "0 L");
-        lblHoseVal     = metricLabel("Selang (Hose)", "0");
-        lblLadderVal   = metricLabel("Tangga (Ladder)", "0");
-        lblOxygenVal   = metricLabel("Oksigen", "0");
+        lblFuelVal = metricLabel("BBM", "0%");
+
+        lblFoamVal = metricLabel("Busa (Foam)", "0 L");
+        lblHoseVal = metricLabel("Selang (Hose)", "0");
+        lblLadderVal = metricLabel("Tangga (Ladder)", "0");
+        lblOxygenVal = metricLabel("Oksigen", "0");
         lblFirstAidVal = metricLabel("P3K", "0");
 
         btnRefill = new RoundedButton("  Isi Ulang Air & BBM", UITheme.INFO);
@@ -376,7 +378,7 @@ public class FiretruckResourcePanel extends JPanel {
         panel.add(lblEditPlate);
         panel.add(lblEditType);
         panel.add(Box.createVerticalStrut(12));
-        
+
         panel.add(lblStatusInfo);
         panel.add(Box.createVerticalStrut(12));
 
@@ -468,7 +470,8 @@ public class FiretruckResourcePanel extends JPanel {
     }
 
     private void refillResources() {
-        if (editingTruck == null) return;
+        if (editingTruck == null)
+            return;
         editingTruck.setCurrentWater(editingTruck.getWaterCapacity());
         editingTruck.setFuelLevel(100);
         editingTruck.setResource(Resource.FOAM, 200);
@@ -486,23 +489,30 @@ public class FiretruckResourcePanel extends JPanel {
     }
 
     private void toggleMaintenanceStatus() {
-        if (editingTruck == null) return;
+        if (editingTruck == null)
+            return;
         if (editingTruck.getStatus() == TruckStatus.MAINTENANCE) {
             editingTruck.setStatus(TruckStatus.AVAILABLE);
-            JOptionPane.showMessageDialog(this, editingTruck.getId() + " siap bertugas kembali di pos.", "Perawatan Selesai", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, editingTruck.getId() + " siap bertugas kembali di pos.",
+                    "Perawatan Selesai", JOptionPane.INFORMATION_MESSAGE);
         } else if (editingTruck.getStatus() == TruckStatus.AVAILABLE) {
             editingTruck.setStatus(TruckStatus.MAINTENANCE);
-            JOptionPane.showMessageDialog(this, editingTruck.getId() + " dikirim ke bengkel perawatan.", "Masuk Perawatan", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, editingTruck.getId() + " dikirim ke bengkel perawatan.",
+                    "Masuk Perawatan", JOptionPane.INFORMATION_MESSAGE);
         }
         refresh();
     }
 
     private Color getStatusColor(TruckStatus status) {
         switch (status) {
-            case AVAILABLE:   return UITheme.SUCCESS;
-            case DEPLOYED:    return UITheme.ACCENT_ORANGE;
-            case MAINTENANCE: return UITheme.DANGER;
-            default:          return UITheme.TEXT_SECONDARY;
+            case AVAILABLE:
+                return UITheme.SUCCESS;
+            case DEPLOYED:
+                return UITheme.ACCENT_ORANGE;
+            case MAINTENANCE:
+                return UITheme.DANGER;
+            default:
+                return UITheme.TEXT_SECONDARY;
         }
     }
 }

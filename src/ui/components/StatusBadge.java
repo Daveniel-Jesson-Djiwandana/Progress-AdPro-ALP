@@ -6,9 +6,6 @@ import ui.UITheme;
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * A small pill-shaped label that shows a coloured status or severity badge.
- */
 public class StatusBadge extends JLabel {
 
     public StatusBadge(String text, Color bg) {
@@ -23,9 +20,15 @@ public class StatusBadge extends JLabel {
     public static StatusBadge forStatus(IncidentStatus status) {
         Color color;
         switch (status) {
-            case DISPATCHED: color = UITheme.STATUS_DISPATCHED; break;
-            case RESOLVED:   color = UITheme.STATUS_RESOLVED;   break;
-            default:         color = UITheme.STATUS_REPORTED;   break;
+            case DISPATCHED:
+                color = UITheme.STATUS_DISPATCHED;
+                break;
+            case RESOLVED:
+                color = UITheme.STATUS_RESOLVED;
+                break;
+            default:
+                color = UITheme.STATUS_REPORTED;
+                break;
         }
         return new StatusBadge(status.getLabel(), color);
     }
@@ -40,7 +43,7 @@ public class StatusBadge extends JLabel {
                 color = UITheme.WARNING; // Vibrant Amber Orange for Red
                 break;
             case DOUBLE_RED:
-                color = UITheme.ACCENT;  // Vibrant Emergency Red for Double Red
+                color = UITheme.ACCENT; // Vibrant Emergency Red for Double Red
                 break;
             case TRIPLE_RED:
                 color = new Color(255, 59, 48); // High contrast Apple Red for Triple Red
@@ -56,9 +59,15 @@ public class StatusBadge extends JLabel {
     public static StatusBadge forTruckStatus(TruckStatus ts) {
         Color color;
         switch (ts) {
-            case DEPLOYED:     color = UITheme.STATUS_DISPATCHED; break;
-            case MAINTENANCE:  color = UITheme.WARNING;           break;
-            default:           color = UITheme.SUCCESS;           break;
+            case DEPLOYED:
+                color = UITheme.STATUS_DISPATCHED;
+                break;
+            case MAINTENANCE:
+                color = UITheme.WARNING;
+                break;
+            default:
+                color = UITheme.SUCCESS;
+                break;
         }
         return new StatusBadge(ts.getLabel(), color);
     }
@@ -66,7 +75,8 @@ public class StatusBadge extends JLabel {
     @Override
     protected void paintComponent(Graphics g) {
         Color bg = (Color) getClientProperty("bg");
-        if (bg == null) bg = UITheme.BG_CARD;
+        if (bg == null)
+            bg = UITheme.BG_CARD;
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setColor(bg);

@@ -15,7 +15,6 @@ public class RoundedButton extends JButton {
     private Color currentDisplayColor;
     private final int cornerRadius = 12;
 
-    
     public RoundedButton(String buttonText, Color initialColor) {
         super(buttonText);
 
@@ -23,12 +22,10 @@ public class RoundedButton extends JButton {
         setupInteractions();
     }
 
-    
     public RoundedButton(String buttonText) {
         this(buttonText, UITheme.TEXT_PRIMARY);
     }
 
-    
     private void setupVisuals(Color baseColor) {
         updateButtonColors(baseColor);
 
@@ -41,7 +38,6 @@ public class RoundedButton extends JButton {
         setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
     }
 
-    
     private void updateButtonColors(Color baseColor) {
         this.normalBackgroundColor = baseColor;
 
@@ -59,7 +55,6 @@ public class RoundedButton extends JButton {
         this.pressedBackgroundColor = Color.getHSBColor(hue, saturation, Math.max(0.0f, brightness - 0.10f));
         this.currentDisplayColor = baseColor;
 
-        
         if (brightness > 0.8f && saturation < 0.2f) {
             setForeground(UITheme.BG_DARK);
         } else {
@@ -67,7 +62,6 @@ public class RoundedButton extends JButton {
         }
     }
 
-    
     private void setupInteractions() {
         addMouseListener(new MouseAdapter() {
             @Override
@@ -96,7 +90,6 @@ public class RoundedButton extends JButton {
         });
     }
 
-    
     @Override
     protected void paintComponent(Graphics graphics) {
         Graphics2D graphics2d = (Graphics2D) graphics.create();
@@ -109,6 +102,7 @@ public class RoundedButton extends JButton {
 
         super.paintComponent(graphics);
     }
+
     public void setBaseColor(Color newColor) {
         updateButtonColors(newColor);
         repaint();

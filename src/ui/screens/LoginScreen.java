@@ -79,7 +79,6 @@ public class LoginScreen extends JPanel {
         demoHint.setFont(UITheme.FONT_SMALL);
         demoHint.setForeground(UITheme.TEXT_MUTED);
         demoHint.setAlignmentX(CENTER_ALIGNMENT);
-
         loginCard.add(appIcon);
         loginCard.add(Box.createVerticalStrut(8));
         loginCard.add(mainTitle);
@@ -101,7 +100,7 @@ public class LoginScreen extends JPanel {
         add(loginCard, new GridBagConstraints());
     }
 
-    //LOGIC
+    // LOGIC
     private void handleLoginAttempt() {
         String username = usernameInput.getText().trim();
         String password = new String(passwordInput.getPassword());
@@ -123,7 +122,7 @@ public class LoginScreen extends JPanel {
         errorMessageLabel.setText(" ");
     }
 
-    //HUMANE HELPERS
+    // HUMANE HELPERS
 
     private void addInputGroup(JPanel container, String labelText, JComponent inputField) {
         JLabel label = new JLabel(labelText);

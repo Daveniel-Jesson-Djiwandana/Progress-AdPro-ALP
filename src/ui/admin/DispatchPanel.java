@@ -21,11 +21,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.regex.*;
 
-/**
- * Admin Dispatch Panel.
- * Layout: JLayeredPane — peta kota full background, sidebar tabel di kiri,
- * panel detail insiden muncul di kanan saat baris dipilih atau titik peta diklik.
- */
+
 public class DispatchPanel extends JPanel {
 
     private DefaultTableModel tableModel;
@@ -365,7 +361,7 @@ public class DispatchPanel extends JPanel {
         return sidebar;
     }
 
-    // ── Action Panel ──────────────────────────────────────────────────────────
+    // Action Panel
     private JPanel buildActionPanel() {
         JPanel p = new JPanel();
         p.setOpaque(false);

@@ -11,13 +11,6 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
-/**
- * PriorityRulesPanel — Configure Dispatch Priority Rules (Fitur 3.7)
- *
- * Admin can adjust victimWeight, areaWeight, intensityWeight via sliders.
- * Live preview shows how the formula scores a sample incident.
- * "Simpan & Terapkan" rebuilds the PriorityQueue with new weights.
- */
 public class PriorityRulesPanel extends JPanel {
 
     private JSlider slVictim, slArea, slIntensity;
@@ -26,8 +19,8 @@ public class PriorityRulesPanel extends JPanel {
     private JLabel lblFormula;
 
     // Sample incident values for live preview
-    private static final int SAMPLE_VICTIMS   = 5;
-    private static final double SAMPLE_AREA   = 200.0;
+    private static final int SAMPLE_VICTIMS = 5;
+    private static final double SAMPLE_AREA = 200.0;
     private static final int SAMPLE_INTENSITY = 7;
 
     public PriorityRulesPanel() {
@@ -72,12 +65,12 @@ public class PriorityRulesPanel extends JPanel {
         sliderTitle.setForeground(UITheme.ACCENT_ORANGE);
         sliderTitle.setAlignmentX(LEFT_ALIGNMENT);
 
-        slVictim    = createSlider(0, 200, 100);  // /10 = 0.0–20.0
-        slArea      = createSlider(0, 100, 5);    // /10 = 0.0–10.0
-        slIntensity = createSlider(0, 200, 50);   // /10 = 0.0–20.0
+        slVictim = createSlider(0, 200, 100); // /10 = 0.0–20.0
+        slArea = createSlider(0, 100, 5); // /10 = 0.0–10.0
+        slIntensity = createSlider(0, 200, 50); // /10 = 0.0–20.0
 
-        lblVictimVal    = valueLabel("10.0");
-        lblAreaVal      = valueLabel("0.5");
+        lblVictimVal = valueLabel("10.0");
+        lblAreaVal = valueLabel("0.5");
         lblIntensityVal = valueLabel("5.0");
 
         slVictim.addChangeListener(e -> {
@@ -281,16 +274,20 @@ public class PriorityRulesPanel extends JPanel {
         lblPreviewScore.setText(String.format("Skor: %.1f", score));
 
         int trucks;
-        if (score >= 100) trucks = 4;
-        else if (score >= 60) trucks = 3;
-        else if (score >= 30) trucks = 2;
-        else trucks = 1;
+        if (score >= 100)
+            trucks = 4;
+        else if (score >= 60)
+            trucks = 3;
+        else if (score >= 30)
+            trucks = 2;
+        else
+            trucks = 1;
         lblPreviewTrucks.setText("Rekomendasi: " + trucks + " truk");
 
         Color truckColor = trucks >= 4 ? UITheme.DANGER
-                         : trucks >= 3 ? UITheme.ACCENT_ORANGE
-                         : trucks >= 2 ? UITheme.WARNING
-                         : UITheme.SUCCESS;
+                : trucks >= 3 ? UITheme.ACCENT_ORANGE
+                        : trucks >= 2 ? UITheme.WARNING
+                                : UITheme.SUCCESS;
         lblPreviewTrucks.setForeground(truckColor);
     }
 

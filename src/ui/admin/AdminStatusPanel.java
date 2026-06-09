@@ -13,7 +13,7 @@ import javax.swing.table.*;
 import java.awt.*;
 import java.util.ArrayList;
 
-/** Admin version of the status panel — durasi + progress bar per incident. */
+//Admin Status
 public class AdminStatusPanel extends JPanel {
 
     private DefaultTableModel tableModel;

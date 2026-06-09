@@ -14,12 +14,6 @@ import javax.swing.table.*;
 import java.awt.*;
 import java.util.ArrayList;
 
-/**
- * CivilianMonitorPanel — Monitor Affected Civilians (Fitur 3.9)
- *
- * Real-time table showing aggregate civilian statistics per incident.
- * Admin can relocate victims (e.g. from Critical/Injured to Evacuated or Safe).
- */
 public class CivilianMonitorPanel extends JPanel {
 
     private DefaultTableModel tableModel;
@@ -30,7 +24,7 @@ public class CivilianMonitorPanel extends JPanel {
     private ArrayList<Incident> activeIncidents = new ArrayList<>();
 
     private static final String[] COLS = {
-        "ID Insiden", "Lokasi Bangunan", "Total Korban", "Kritis", "Luka-luka", "Dievakuasi", "Aman"
+            "ID Insiden", "Lokasi Bangunan", "Total Korban", "Kritis", "Luka-luka", "Dievakuasi", "Aman"
     };
 
     public CivilianMonitorPanel() {
@@ -78,11 +72,11 @@ public class CivilianMonitorPanel extends JPanel {
         summaryRow.setOpaque(false);
         summaryRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
 
-        lblTotal     = createSummaryCard(summaryRow, "Total Korban",  "0", UITheme.TEXT_PRIMARY);
-        lblCritical  = createSummaryCard(summaryRow, "Kritis",         "0", UITheme.DANGER);
-        lblInjured   = createSummaryCard(summaryRow, "Luka-luka",      "0", UITheme.ACCENT_ORANGE);
-        lblEvacuated = createSummaryCard(summaryRow, "Dievakuasi",     "0", UITheme.INFO);
-        lblSafe      = createSummaryCard(summaryRow, "Aman",           "0", UITheme.SUCCESS);
+        lblTotal = createSummaryCard(summaryRow, "Total Korban", "0", UITheme.TEXT_PRIMARY);
+        lblCritical = createSummaryCard(summaryRow, "Kritis", "0", UITheme.DANGER);
+        lblInjured = createSummaryCard(summaryRow, "Luka-luka", "0", UITheme.ACCENT_ORANGE);
+        lblEvacuated = createSummaryCard(summaryRow, "Dievakuasi", "0", UITheme.INFO);
+        lblSafe = createSummaryCard(summaryRow, "Aman", "0", UITheme.SUCCESS);
 
         JPanel topPanel = new JPanel();
         topPanel.setOpaque(false);
@@ -93,7 +87,10 @@ public class CivilianMonitorPanel extends JPanel {
 
         // ── Table ──
         tableModel = new DefaultTableModel(COLS, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
         table = new JTable(tableModel);
         table.setFont(UITheme.FONT_BODY);
@@ -114,7 +111,7 @@ public class CivilianMonitorPanel extends JPanel {
 
         table.getColumnModel().getColumn(0).setPreferredWidth(80);
         table.getColumnModel().getColumn(1).setPreferredWidth(180);
-        
+
         for (int i = 2; i < 7; i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
             table.getColumnModel().getColumn(i).setPreferredWidth(80);
@@ -122,7 +119,9 @@ public class CivilianMonitorPanel extends JPanel {
 
         // Highlight columns with status colors
         table.getColumnModel().getColumn(3).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override public Component getTableCellRendererComponent(JTable t, Object val, boolean sel, boolean focus, int row, int col) {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object val, boolean sel, boolean focus, int row,
+                    int col) {
                 super.getTableCellRendererComponent(t, val, sel, focus, row, col);
                 setHorizontalAlignment(CENTER);
                 setForeground(UITheme.DANGER);
@@ -131,7 +130,9 @@ public class CivilianMonitorPanel extends JPanel {
             }
         });
         table.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override public Component getTableCellRendererComponent(JTable t, Object val, boolean sel, boolean focus, int row, int col) {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object val, boolean sel, boolean focus, int row,
+                    int col) {
                 super.getTableCellRendererComponent(t, val, sel, focus, row, col);
                 setHorizontalAlignment(CENTER);
                 setForeground(UITheme.ACCENT_ORANGE);
@@ -140,7 +141,9 @@ public class CivilianMonitorPanel extends JPanel {
             }
         });
         table.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override public Component getTableCellRendererComponent(JTable t, Object val, boolean sel, boolean focus, int row, int col) {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object val, boolean sel, boolean focus, int row,
+                    int col) {
                 super.getTableCellRendererComponent(t, val, sel, focus, row, col);
                 setHorizontalAlignment(CENTER);
                 setForeground(UITheme.INFO);
@@ -149,7 +152,9 @@ public class CivilianMonitorPanel extends JPanel {
             }
         });
         table.getColumnModel().getColumn(6).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override public Component getTableCellRendererComponent(JTable t, Object val, boolean sel, boolean focus, int row, int col) {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object val, boolean sel, boolean focus, int row,
+                    int col) {
                 super.getTableCellRendererComponent(t, val, sel, focus, row, col);
                 setHorizontalAlignment(CENTER);
                 setForeground(UITheme.SUCCESS);
@@ -237,14 +242,14 @@ public class CivilianMonitorPanel extends JPanel {
         ArrayList<Incident> active = IncidentService.getActiveIncidents();
         for (Incident inc : active) {
             activeIncidents.add(inc);
-            tableModel.addRow(new Object[]{
-                inc.getIncidentId(),
-                inc.getLocation().replaceAll("\\[.*?\\]","").trim(),
-                inc.getNumVictimsTrapped(),
-                inc.getVictimsCritical(),
-                inc.getVictimsInjured(),
-                inc.getVictimsEvacuated(),
-                inc.getVictimsSafe()
+            tableModel.addRow(new Object[] {
+                    inc.getIncidentId(),
+                    inc.getLocation().replaceAll("\\[.*?\\]", "").trim(),
+                    inc.getNumVictimsTrapped(),
+                    inc.getVictimsCritical(),
+                    inc.getVictimsInjured(),
+                    inc.getVictimsEvacuated(),
+                    inc.getVictimsSafe()
             });
             total += inc.getNumVictimsTrapped();
             critical += inc.getVictimsCritical();
@@ -265,13 +270,17 @@ public class CivilianMonitorPanel extends JPanel {
 
     private Incident getSelectedIncident() {
         int row = table.getSelectedRow();
-        if (row < 0 || row >= activeIncidents.size()) return null;
+        if (row < 0 || row >= activeIncidents.size())
+            return null;
         return activeIncidents.get(row);
     }
 
     private void evacuateCritical() {
         Incident inc = getSelectedIncident();
-        if (inc == null) { warn("Pilih insiden terlebih dahulu."); return; }
+        if (inc == null) {
+            warn("Pilih insiden terlebih dahulu.");
+            return;
+        }
         if (inc.getVictimsCritical() > 0) {
             inc.setVictimsCritical(inc.getVictimsCritical() - 1);
             inc.setVictimsEvacuated(inc.getVictimsEvacuated() + 1);
@@ -283,7 +292,10 @@ public class CivilianMonitorPanel extends JPanel {
 
     private void evacuateInjured() {
         Incident inc = getSelectedIncident();
-        if (inc == null) { warn("Pilih insiden terlebih dahulu."); return; }
+        if (inc == null) {
+            warn("Pilih insiden terlebih dahulu.");
+            return;
+        }
         if (inc.getVictimsInjured() > 0) {
             inc.setVictimsInjured(inc.getVictimsInjured() - 1);
             inc.setVictimsEvacuated(inc.getVictimsEvacuated() + 1);
@@ -295,7 +307,10 @@ public class CivilianMonitorPanel extends JPanel {
 
     private void markSafe() {
         Incident inc = getSelectedIncident();
-        if (inc == null) { warn("Pilih insiden terlebih dahulu."); return; }
+        if (inc == null) {
+            warn("Pilih insiden terlebih dahulu.");
+            return;
+        }
         if (inc.getVictimsEvacuated() > 0) {
             inc.setVictimsEvacuated(inc.getVictimsEvacuated() - 1);
             inc.setVictimsSafe(inc.getVictimsSafe() + 1);
@@ -307,20 +322,29 @@ public class CivilianMonitorPanel extends JPanel {
 
     private void evacuateAll() {
         Incident inc = getSelectedIncident();
-        if (inc == null) { warn("Pilih insiden terlebih dahulu."); return; }
+        if (inc == null) {
+            warn("Pilih insiden terlebih dahulu.");
+            return;
+        }
         int moving = inc.getVictimsCritical() + inc.getVictimsInjured() + inc.getVictimsEvacuated();
         if (moving > 0) {
             inc.setVictimsSafe(inc.getVictimsSafe() + moving);
             inc.setVictimsCritical(0);
             inc.setVictimsInjured(0);
             inc.setVictimsEvacuated(0);
-            JOptionPane.showMessageDialog(this, "Semua korban berhasil dievakuasi dan diamankan!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Semua korban berhasil dievakuasi dan diamankan!", "Sukses",
+                    JOptionPane.INFORMATION_MESSAGE);
             refresh();
         } else {
             info("Semua korban sudah aman.");
         }
     }
 
-    private void warn(String msg) { JOptionPane.showMessageDialog(this, msg, "Peringatan", JOptionPane.WARNING_MESSAGE); }
-    private void info(String msg) { JOptionPane.showMessageDialog(this, msg, "Info",       JOptionPane.INFORMATION_MESSAGE); }
+    private void warn(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Peringatan", JOptionPane.WARNING_MESSAGE);
+    }
+
+    private void info(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Info", JOptionPane.INFORMATION_MESSAGE);
+    }
 }

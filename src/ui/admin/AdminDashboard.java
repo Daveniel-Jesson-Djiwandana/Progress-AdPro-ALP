@@ -12,26 +12,26 @@ import java.awt.*;
 
 public class AdminDashboard extends JPanel {
 
-    public static final String CARD_AUTO       = "AUTO_FIRE";
-    public static final String CARD_DISPATCH   = "DISPATCH";
-    public static final String CARD_STATUS     = "STATUS";
-    public static final String CARD_HISTORY    = "HISTORY";
-    public static final String CARD_PRIORITY   = "PRIORITY";
-    public static final String CARD_CIVILIANS  = "CIVILIANS";
-    public static final String CARD_RESOURCES  = "RESOURCES";
+    public static final String CARD_AUTO = "AUTO_FIRE";
+    public static final String CARD_DISPATCH = "DISPATCH";
+    public static final String CARD_STATUS = "STATUS";
+    public static final String CARD_HISTORY = "HISTORY";
+    public static final String CARD_PRIORITY = "PRIORITY";
+    public static final String CARD_CIVILIANS = "CIVILIANS";
+    public static final String CARD_RESOURCES = "RESOURCES";
 
     private final MainFrame frame;
     private JLabel lblUsername;
 
     private final CardLayout contentLayout = new CardLayout();
-    private final JPanel     contentPanel  = new JPanel(contentLayout);
+    private final JPanel contentPanel = new JPanel(contentLayout);
 
-    private AutoFirePanel          autoFirePanel;
-    private DispatchPanel          dispatchPanel;
-    private AdminStatusPanel       statusPanel;
-    private AdminHistoryPanel      historyPanel;
-    private PriorityRulesPanel     priorityRulesPanel;
-    private CivilianMonitorPanel   civilianMonitorPanel;
+    private AutoFirePanel autoFirePanel;
+    private DispatchPanel dispatchPanel;
+    private AdminStatusPanel statusPanel;
+    private AdminHistoryPanel historyPanel;
+    private PriorityRulesPanel priorityRulesPanel;
+    private CivilianMonitorPanel civilianMonitorPanel;
     private FiretruckResourcePanel firetruckResourcePanel;
 
     public AdminDashboard(MainFrame frame) {
@@ -44,24 +44,26 @@ public class AdminDashboard extends JPanel {
     private void buildUI() {
         add(buildSidebar(), BorderLayout.WEST);
 
-        autoFirePanel  = new AutoFirePanel(() -> {
-            if (statusPanel   != null) statusPanel.refresh();
-            if (dispatchPanel != null) dispatchPanel.refresh();
+        autoFirePanel = new AutoFirePanel(() -> {
+            if (statusPanel != null)
+                statusPanel.refresh();
+            if (dispatchPanel != null)
+                dispatchPanel.refresh();
         });
-        dispatchPanel          = new DispatchPanel();
-        statusPanel            = new AdminStatusPanel();
-        historyPanel           = new AdminHistoryPanel();
-        priorityRulesPanel     = new PriorityRulesPanel();
-        civilianMonitorPanel   = new CivilianMonitorPanel();
+        dispatchPanel = new DispatchPanel();
+        statusPanel = new AdminStatusPanel();
+        historyPanel = new AdminHistoryPanel();
+        priorityRulesPanel = new PriorityRulesPanel();
+        civilianMonitorPanel = new CivilianMonitorPanel();
         firetruckResourcePanel = new FiretruckResourcePanel();
 
         contentPanel.setBackground(UITheme.BG_DARK);
-        contentPanel.add(autoFirePanel,          CARD_AUTO);
-        contentPanel.add(dispatchPanel,          CARD_DISPATCH);
-        contentPanel.add(statusPanel,            CARD_STATUS);
-        contentPanel.add(historyPanel,           CARD_HISTORY);
-        contentPanel.add(priorityRulesPanel,     CARD_PRIORITY);
-        contentPanel.add(civilianMonitorPanel,   CARD_CIVILIANS);
+        contentPanel.add(autoFirePanel, CARD_AUTO);
+        contentPanel.add(dispatchPanel, CARD_DISPATCH);
+        contentPanel.add(statusPanel, CARD_STATUS);
+        contentPanel.add(historyPanel, CARD_HISTORY);
+        contentPanel.add(priorityRulesPanel, CARD_PRIORITY);
+        contentPanel.add(civilianMonitorPanel, CARD_CIVILIANS);
         contentPanel.add(firetruckResourcePanel, CARD_RESOURCES);
 
         add(contentPanel, BorderLayout.CENTER);
@@ -101,30 +103,33 @@ public class AdminDashboard extends JPanel {
         header.add(Box.createVerticalStrut(1));
         header.add(lblUsername);
 
-        JLabel sSim    = sectionLabel("SIMULASI KEBAKARAN");
-        RoundedButton bAuto     = navBtn("Sistem Auto Fire",   VectorIcon.Type.FIRE,    CARD_AUTO);
+        JLabel sSim = sectionLabel("SIMULASI KEBAKARAN");
+        RoundedButton bAuto = navBtn("Sistem Auto Fire", VectorIcon.Type.FIRE, CARD_AUTO);
 
-        JLabel sOps    = sectionLabel("OPERASIONAL");
-        RoundedButton bDispatch = navBtn("Dispatch Kendaraan", VectorIcon.Type.TRUCK,   CARD_DISPATCH);
+        JLabel sOps = sectionLabel("OPERASIONAL");
+        RoundedButton bDispatch = navBtn("Dispatch Kendaraan", VectorIcon.Type.TRUCK, CARD_DISPATCH);
 
         JLabel sConfig = sectionLabel("KONFIGURASI");
-        RoundedButton bPriority = navBtn("Aturan Prioritas",   VectorIcon.Type.SETTINGS, CARD_PRIORITY);
+        RoundedButton bPriority = navBtn("Aturan Prioritas", VectorIcon.Type.SETTINGS, CARD_PRIORITY);
 
         JLabel sMonitor = sectionLabel("PEMANTAUAN");
-        RoundedButton bCivilians = navBtn("Monitor Korban",    VectorIcon.Type.PEOPLE,   CARD_CIVILIANS);
+        RoundedButton bCivilians = navBtn("Monitor Korban", VectorIcon.Type.PEOPLE, CARD_CIVILIANS);
 
         JLabel sResources = sectionLabel("SUMBER DAYA");
-        RoundedButton bResources = navBtn("Logistik Armada",   VectorIcon.Type.WRENCH,   CARD_RESOURCES);
+        RoundedButton bResources = navBtn("Logistik Armada", VectorIcon.Type.WRENCH, CARD_RESOURCES);
 
-        JLabel sData   = sectionLabel("DATA & STATUS");
-        RoundedButton bStatus   = navBtn("Status Insiden",     VectorIcon.Type.STATUS,  CARD_STATUS);
-        RoundedButton bHistory  = navBtn("Riwayat Laporan",    VectorIcon.Type.HISTORY, CARD_HISTORY);
+        JLabel sData = sectionLabel("DATA & STATUS");
+        RoundedButton bStatus = navBtn("Status Insiden", VectorIcon.Type.STATUS, CARD_STATUS);
+        RoundedButton bHistory = navBtn("Riwayat Laporan", VectorIcon.Type.HISTORY, CARD_HISTORY);
 
         RoundedButton btnLogout = new RoundedButton("Keluar", UITheme.BG_CARD);
         btnLogout.setIcon(new VectorIcon(VectorIcon.Type.LOGOUT, 16, UITheme.TEXT_PRIMARY));
         btnLogout.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         btnLogout.setAlignmentX(LEFT_ALIGNMENT);
-        btnLogout.addActionListener(e -> { AuthService.logout(); frame.onLogout(); });
+        btnLogout.addActionListener(e -> {
+            AuthService.logout();
+            frame.onLogout();
+        });
 
         sidebar.add(header);
         addDiv(sidebar);
@@ -132,7 +137,7 @@ public class AdminDashboard extends JPanel {
         sidebar.add(sSim);
         sidebar.add(bAuto);
         sidebar.add(Box.createVerticalStrut(8));
-        
+
         addDiv(sidebar);
         sidebar.add(Box.createVerticalStrut(4));
         sidebar.add(sOps);
@@ -156,7 +161,7 @@ public class AdminDashboard extends JPanel {
         sidebar.add(sResources);
         sidebar.add(bResources);
         sidebar.add(Box.createVerticalStrut(8));
-        
+
         addDiv(sidebar);
         sidebar.add(Box.createVerticalStrut(4));
         sidebar.add(sData);
@@ -203,12 +208,24 @@ public class AdminDashboard extends JPanel {
     public void showContent(String card) {
         contentLayout.show(contentPanel, card);
         switch (card) {
-            case CARD_DISPATCH:  dispatchPanel.refresh(); break;
-            case CARD_STATUS:    statusPanel.refresh();   break;
-            case CARD_HISTORY:   historyPanel.refresh();  break;
-            case CARD_PRIORITY:  priorityRulesPanel.refresh(); break;
-            case CARD_CIVILIANS: civilianMonitorPanel.refresh(); break;
-            case CARD_RESOURCES: firetruckResourcePanel.refresh(); break;
+            case CARD_DISPATCH:
+                dispatchPanel.refresh();
+                break;
+            case CARD_STATUS:
+                statusPanel.refresh();
+                break;
+            case CARD_HISTORY:
+                historyPanel.refresh();
+                break;
+            case CARD_PRIORITY:
+                priorityRulesPanel.refresh();
+                break;
+            case CARD_CIVILIANS:
+                civilianMonitorPanel.refresh();
+                break;
+            case CARD_RESOURCES:
+                firetruckResourcePanel.refresh();
+                break;
         }
     }
 

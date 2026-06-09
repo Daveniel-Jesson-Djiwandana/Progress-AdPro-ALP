@@ -13,23 +13,20 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-/**
- * AutoFirePanel — kebakaran muncul secara otomatis via Swing Timer.
- * Admin bisa ON/OFF dan mengatur interval. Manual trigger juga tersedia.
- */
+
 public class AutoFirePanel extends JPanel {
 
     private static final int DEFAULT_INTERVAL_SEC = 20;
 
-    private Timer  countdownTimer;
-    private Timer  fireTimer;
-    private int    intervalSec   = DEFAULT_INTERVAL_SEC;
-    private int    countdown     = DEFAULT_INTERVAL_SEC;
-    private boolean running      = false;
+    private Timer countdownTimer;
+    private Timer fireTimer;
+    private int intervalSec = DEFAULT_INTERVAL_SEC;
+    private int countdown = DEFAULT_INTERVAL_SEC;
+    private boolean running = false;
 
-    private JLabel        lblCountdown;
-    private JLabel        lblStatus;
-    private JSpinner      spInterval;
+    private JLabel lblCountdown;
+    private JLabel lblStatus;
+    private JSpinner spInterval;
     private RoundedButton btnToggle;
     private DefaultListModel<String> logModel;
     private JList<String> logList;
@@ -119,7 +116,8 @@ public class AutoFirePanel extends JPanel {
         spInterval.setAlignmentX(LEFT_ALIGNMENT);
         spInterval.addChangeListener(e -> {
             intervalSec = (int) spInterval.getValue();
-            if (!running) countdown = intervalSec;
+            if (!running)
+                countdown = intervalSec;
         });
 
         btnToggle = new RoundedButton("  Aktifkan Sistem", UITheme.SUCCESS);
@@ -147,7 +145,7 @@ public class AutoFirePanel extends JPanel {
 
         // Log list
         logModel = new DefaultListModel<>();
-        logList  = new JList<>(logModel);
+        logList = new JList<>(logModel);
         logList.setFont(UITheme.FONT_SMALL);
         logList.setBackground(UITheme.BG_SURFACE);
         logList.setForeground(UITheme.TEXT_PRIMARY);
@@ -155,8 +153,8 @@ public class AutoFirePanel extends JPanel {
 
         JScrollPane logScroll = new JScrollPane(logList);
         logScroll.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(UITheme.BORDER), "Log Insiden Otomatis",
-            0, 0, UITheme.FONT_SMALL, UITheme.TEXT_SECONDARY));
+                BorderFactory.createLineBorder(UITheme.BORDER), "Log Insiden Otomatis",
+                0, 0, UITheme.FONT_SMALL, UITheme.TEXT_SECONDARY));
         logScroll.getViewport().setBackground(UITheme.BG_SURFACE);
 
         add(titlePanel, BorderLayout.NORTH);
@@ -164,12 +162,13 @@ public class AutoFirePanel extends JPanel {
         add(logScroll, BorderLayout.SOUTH);
     }
 
-    // ── Timer Logic ───────────────────────────────────────────────────────────
+    // Timer Logic
 
     private void buildTimers() {
         // Countdown timer: tick every second
         countdownTimer = new Timer(1000, e -> {
-            if (!running) return;
+            if (!running)
+                return;
             countdown--;
             lblCountdown.setText(String.valueOf(countdown));
             if (countdown <= 0) {
@@ -214,26 +213,30 @@ public class AutoFirePanel extends JPanel {
         holder[0] = IncidentService.randomizeIncident(label + " (Simulasi)", () -> {
             // Geocoding complete — update the log entry with the resolved address
             Incident inc = holder[0];
-            if (inc == null) return;
+            if (inc == null)
+                return;
             for (int i = 0; i < logModel.size(); i++) {
                 String entry = logModel.get(i);
                 if (entry.contains(inc.getIncidentId())) {
                     String t = entry.substring(1, 9); // HH:mm:ss
                     String newEntry = String.format("[%s] %s — %s [%s]",
-                        t, inc.getIncidentId(), inc.getLocation(), inc.getSeverity().getLabel());
+                            t, inc.getIncidentId(), inc.getLocation(), inc.getSeverity().getLabel());
                     logModel.set(i, newEntry);
                     break;
                 }
             }
-            if (onNewIncident != null) onNewIncident.run();
+            if (onNewIncident != null)
+                onNewIncident.run();
         });
         Incident inc = holder[0];
-        String time  = new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date());
+        String time = new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date());
         String entry = String.format("[%s] %s — %s [%s]",
-            time, inc.getIncidentId(), inc.getLocation(), inc.getSeverity().getLabel());
+                time, inc.getIncidentId(), inc.getLocation(), inc.getSeverity().getLabel());
         logModel.add(0, entry); // prepend (newest first)
-        if (logModel.size() > 50) logModel.remove(logModel.size() - 1);
-        if (onNewIncident != null) onNewIncident.run();
+        if (logModel.size() > 50)
+            logModel.remove(logModel.size() - 1);
+        if (onNewIncident != null)
+            onNewIncident.run();
     }
 
     private void advanceAllProgress() {
@@ -241,11 +244,12 @@ public class AutoFirePanel extends JPanel {
 
         // 1. Drain resources of deployed trucks
         ArrayList<model.Firetruck> stationTrucks = database.Database.getFireStation().getFiretrucks();
-        
+
         // Count deployed supply trucks (Tipe 5 - Supply Air)
         int deployedSupplyTrucks = 0;
         for (model.Firetruck truck : stationTrucks) {
-            if (truck.getStatus() == model.TruckStatus.DEPLOYED && truck.getType() == model.FiretruckType.TYPE_5_WATER_SUPPLY) {
+            if (truck.getStatus() == model.TruckStatus.DEPLOYED
+                    && truck.getType() == model.FiretruckType.TYPE_5_WATER_SUPPLY) {
                 deployedSupplyTrucks++;
             }
         }
@@ -254,31 +258,33 @@ public class AutoFirePanel extends JPanel {
             if (truck.getStatus() == model.TruckStatus.DEPLOYED) {
                 // Deployed truck consumes water and fuel
                 int waterDrain = 50; // liters per tick (lasts ~1.5 to 2.5 minutes)
-                
+
                 // Sistem Rotasi Air:
-                // Tipe 5 (Supply Air) di belakang terus mencari sumber air & menyuplai unit depan
+                // Tipe 5 (Supply Air) di belakang terus mencari sumber air & menyuplai unit
+                // depan
                 if (truck.getType() == model.FiretruckType.TYPE_5_WATER_SUPPLY) {
                     waterDrain = 0; // Supply air mencari air eksternal, airnya sendiri stabil/tidak terkuras habis
                 } else if (deployedSupplyTrucks > 0) {
                     waterDrain = 10; // Konsumsi air unit depan melambat karena dibantu supply
                 }
-                
-                int fuelDrain = 1;    // 1 percent per tick (lasts ~5 minutes of continuous operation)
-                
+
+                int fuelDrain = 1; // 1 percent per tick (lasts ~5 minutes of continuous operation)
+
                 int nextWater = Math.max(0, truck.getCurrentWater() - waterDrain);
-                
+
                 // Transfer air dari unit supply (Tipe 5) ke unit depan
                 if (deployedSupplyTrucks > 0 && truck.getType() != model.FiretruckType.TYPE_5_WATER_SUPPLY) {
                     nextWater = Math.min(truck.getWaterCapacity(), nextWater + 30);
                 }
-                
-                int nextFuel  = Math.max(0, truck.getFuelLevel() - fuelDrain);
-                
+
+                int nextFuel = Math.max(0, truck.getFuelLevel() - fuelDrain);
+
                 truck.setCurrentWater(nextWater);
                 truck.setFuelLevel(nextFuel);
                 changed = true;
-                
-                // If either is empty, return to firestation (set status to AVAILABLE but resource is 0)
+
+                // If either is empty, return to firestation (set status to AVAILABLE but
+                // resource is 0)
                 if (nextWater == 0 || nextFuel == 0) {
                     truck.setStatus(model.TruckStatus.AVAILABLE);
                     // Decrement assigned trucks of one active incident
@@ -298,15 +304,16 @@ public class AutoFirePanel extends JPanel {
                 if (inc.getDispatchStartTime() == null) {
                     inc.startDispatch();
                 }
-                long elapsed = java.time.Duration.between(inc.getDispatchStartTime(), java.time.LocalDateTime.now()).getSeconds();
-                
+                long elapsed = java.time.Duration.between(inc.getDispatchStartTime(), java.time.LocalDateTime.now())
+                        .getSeconds();
+
                 int travelTime = 30; // seconds spent traveling to the scene
                 int intensity = inc.getFireIntensity();
                 int trucks = Math.max(1, inc.getTrucksAssigned());
-                
+
                 // Extinguishing time depends on fire intensity and number of trucks assigned
                 double extinguishingTime = (intensity * 18.0) / trucks;
-                
+
                 int nextProgress = 0;
                 if (elapsed <= travelTime) {
                     // Phase 1: En Route (0% to 30%)
@@ -316,7 +323,7 @@ public class AutoFirePanel extends JPanel {
                     double handlingElapsed = elapsed - travelTime;
                     nextProgress = 30 + (int) ((handlingElapsed * 70.0) / extinguishingTime);
                 }
-                
+
                 // Cap progress at 100%
                 nextProgress = Math.min(100, nextProgress);
                 inc.setDispatchProgress(nextProgress);
@@ -334,7 +341,8 @@ public class AutoFirePanel extends JPanel {
                     for (int i = 0; i < Math.min(toFree, deployed.size()); i++) {
                         deployed.get(i).setStatus(model.TruckStatus.AVAILABLE);
                     }
-                    service.IncidentService.resolveIncident(inc, "Sistem Otomatis", toFree, "Pemadaman otomatis selesai.");
+                    service.IncidentService.resolveIncident(inc, "Sistem Otomatis", toFree,
+                            "Pemadaman otomatis selesai.");
                 }
             }
         }

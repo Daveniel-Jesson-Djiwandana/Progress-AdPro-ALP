@@ -114,7 +114,8 @@ public class RandomizerPanel extends JPanel {
         holder[0] = IncidentService.randomizeIncident(adminName, () -> {
             // When geocoding finishes, update the HTML display with the resolved address
             Incident inc = holder[0];
-            if (inc == null) return;
+            if (inc == null)
+                return;
             String html = buildHtml(inc);
             lblResult.setText(html);
         });
@@ -122,24 +123,24 @@ public class RandomizerPanel extends JPanel {
         Incident inc = holder[0];
         lblResult.setText(buildHtml(inc));
         resultCard.setVisible(true);
-        revalidate(); repaint();
+        revalidate();
+        repaint();
     }
 
     private String buildHtml(Incident inc) {
         return String.format(
-            "<html>" +
-            "<b>ID:</b> %s<br>" +
-            "<b>Lokasi:</b> %s<br>" +
-            "<b>Tingkat:</b> %s &nbsp; <b>Intensitas:</b> %d/10<br>" +
-            "<b>Korban Terjebak:</b> %d orang<br>" +
-            "<b>Luas Api:</b> %.0f m²<br>" +
-            "<b>Deskripsi:</b> %s<br>" +
-            "<b>Skor Prioritas:</b> %.1f" +
-            "</html>",
-            inc.getIncidentId(), inc.getLocation(),
-            inc.getSeverity().getLabel(), inc.getFireIntensity(),
-            inc.getNumVictimsTrapped(), inc.getFireSpreadArea(),
-            inc.getDescription(), inc.getPriorityScore()
-        );
+                "<html>" +
+                        "<b>ID:</b> %s<br>" +
+                        "<b>Lokasi:</b> %s<br>" +
+                        "<b>Tingkat:</b> %s &nbsp; <b>Intensitas:</b> %d/10<br>" +
+                        "<b>Korban Terjebak:</b> %d orang<br>" +
+                        "<b>Luas Api:</b> %.0f m²<br>" +
+                        "<b>Deskripsi:</b> %s<br>" +
+                        "<b>Skor Prioritas:</b> %.1f" +
+                        "</html>",
+                inc.getIncidentId(), inc.getLocation(),
+                inc.getSeverity().getLabel(), inc.getFireIntensity(),
+                inc.getNumVictimsTrapped(), inc.getFireSpreadArea(),
+                inc.getDescription(), inc.getPriorityScore());
     }
 }

@@ -12,19 +12,19 @@ import java.awt.*;
 
 public class UserDashboard extends JPanel {
 
-    public static final String CARD_REPORT  = "REPORT";
-    public static final String CARD_STATUS  = "STATUS";
+    public static final String CARD_REPORT = "REPORT";
+    public static final String CARD_STATUS = "STATUS";
     public static final String CARD_HISTORY = "HISTORY";
 
     private final MainFrame frame;
     private JLabel lblUsername;
 
     private final CardLayout contentLayout = new CardLayout();
-    private final JPanel     contentPanel  = new JPanel(contentLayout);
+    private final JPanel contentPanel = new JPanel(contentLayout);
 
     private ReportIncidentPanel reportPanel;
-    private ViewStatusPanel     statusPanel;
-    private UserHistoryPanel    historyPanel;
+    private ViewStatusPanel statusPanel;
+    private UserHistoryPanel historyPanel;
 
     public UserDashboard(MainFrame frame) {
         this.frame = frame;
@@ -36,13 +36,13 @@ public class UserDashboard extends JPanel {
     private void buildUI() {
         add(buildSidebar(), BorderLayout.WEST);
 
-        reportPanel  = new ReportIncidentPanel(this);
-        statusPanel  = new ViewStatusPanel();
+        reportPanel = new ReportIncidentPanel(this);
+        statusPanel = new ViewStatusPanel();
         historyPanel = new UserHistoryPanel();
 
         contentPanel.setBackground(UITheme.BG_DARK);
-        contentPanel.add(reportPanel,  CARD_REPORT);
-        contentPanel.add(statusPanel,  CARD_STATUS);
+        contentPanel.add(reportPanel, CARD_REPORT);
+        contentPanel.add(statusPanel, CARD_STATUS);
         contentPanel.add(historyPanel, CARD_HISTORY);
 
         add(contentPanel, BorderLayout.CENTER);
@@ -81,18 +81,21 @@ public class UserDashboard extends JPanel {
         header.add(appTitle);
         header.add(lblUsername);
 
-        JLabel sLapor  = sectionLabel("PELAPORAN");
+        JLabel sLapor = sectionLabel("PELAPORAN");
         JLabel sStatus = sectionLabel("INFORMASI");
 
-        RoundedButton bReport  = navBtn("Lapor Kebakaran",   VectorIcon.Type.REPORT,  CARD_REPORT);
-        RoundedButton bStatus  = navBtn("Status Laporan",    VectorIcon.Type.STATUS,  CARD_STATUS);
-        RoundedButton bHistory = navBtn("Riwayat Laporan",   VectorIcon.Type.HISTORY, CARD_HISTORY);
+        RoundedButton bReport = navBtn("Lapor Kebakaran", VectorIcon.Type.REPORT, CARD_REPORT);
+        RoundedButton bStatus = navBtn("Status Laporan", VectorIcon.Type.STATUS, CARD_STATUS);
+        RoundedButton bHistory = navBtn("Riwayat Laporan", VectorIcon.Type.HISTORY, CARD_HISTORY);
 
         RoundedButton btnLogout = new RoundedButton("Keluar", UITheme.BG_CARD);
         btnLogout.setIcon(new VectorIcon(VectorIcon.Type.LOGOUT, 16, UITheme.TEXT_PRIMARY));
         btnLogout.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         btnLogout.setAlignmentX(LEFT_ALIGNMENT);
-        btnLogout.addActionListener(e -> { AuthService.logout(); frame.onLogout(); });
+        btnLogout.addActionListener(e -> {
+            AuthService.logout();
+            frame.onLogout();
+        });
 
         sidebar.add(header);
         addDiv(sidebar);
@@ -146,9 +149,15 @@ public class UserDashboard extends JPanel {
     public void showContent(String card) {
         contentLayout.show(contentPanel, card);
         switch (card) {
-            case CARD_REPORT:  reportPanel.reset();    break;
-            case CARD_STATUS:  statusPanel.refresh();  break;
-            case CARD_HISTORY: historyPanel.refresh(); break;
+            case CARD_REPORT:
+                reportPanel.reset();
+                break;
+            case CARD_STATUS:
+                statusPanel.refresh();
+                break;
+            case CARD_HISTORY:
+                historyPanel.refresh();
+                break;
         }
     }
 

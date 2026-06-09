@@ -17,17 +17,17 @@ public class ReportIncidentPanel extends JPanel {
     private final UserDashboard parent;
 
     private JTextField tfMapCoord;
-    private JLabel     lblAddress;            // HTML label — truncates with "..."
-    private String     fullAddress = "";      // stores the complete address text
-    private boolean    addressExpanded;       // click-to-toggle state
-    private JTextArea  taDesc;
-    private JComboBox<BuildingCategory>    cbBuildingCat;
-    private JComboBox<String>              cbBuildingSubType;
-    private JSpinner   spVictims;
+    private JLabel lblAddress; // HTML label — truncates with "..."
+    private String fullAddress = ""; // stores the complete address text
+    private boolean addressExpanded; // click-to-toggle state
+    private JTextArea taDesc;
+    private JComboBox<BuildingCategory> cbBuildingCat;
+    private JComboBox<String> cbBuildingSubType;
+    private JSpinner spVictims;
 
-    private JLabel     lblResult;
+    private JLabel lblResult;
     private OsmCityMapPanel mapPanel;
-    private JLabel     lblZoom;
+    private JLabel lblZoom;
 
     private double mapLat = Double.NaN, mapLon = Double.NaN;
     private JPanel sidebarPanel;
@@ -41,7 +41,8 @@ public class ReportIncidentPanel extends JPanel {
 
     private void buildUI() {
         mapPanel = new OsmCityMapPanel((lat, lon) -> {
-            mapLat = lat; mapLon = lon;
+            mapLat = lat;
+            mapLon = lon;
             tfMapCoord.setText(String.format("%.5f, %.5f", lat, lon));
             tfMapCoord.setForeground(UITheme.ACCENT);
             // Auto-buka sidebar jika sedang tersembunyi
@@ -65,7 +66,8 @@ public class ReportIncidentPanel extends JPanel {
         btnOpenForm.addActionListener(e -> sidebarPanel.setVisible(true));
 
         JLayeredPane layers = new JLayeredPane() {
-            @Override public void doLayout() {
+            @Override
+            public void doLayout() {
                 int w = getWidth(), h = getHeight();
                 mapScroll.setBounds(0, 0, w, h);
                 int sw = 360;
@@ -76,20 +78,25 @@ public class ReportIncidentPanel extends JPanel {
                 btnOpenForm.setBounds(w - 160, h - 48, 150, 36);
             }
         };
-        layers.add(mapScroll,   JLayeredPane.DEFAULT_LAYER);
+        layers.add(mapScroll, JLayeredPane.DEFAULT_LAYER);
         layers.add(sidebarPanel, JLayeredPane.PALETTE_LAYER);
-        layers.add(zoomBar,     JLayeredPane.PALETTE_LAYER);
+        layers.add(zoomBar, JLayeredPane.PALETTE_LAYER);
         layers.add(btnOpenForm, JLayeredPane.PALETTE_LAYER);
 
         // Sync visibility tombol dengan sidebar
         sidebarPanel.addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override public void componentHidden(java.awt.event.ComponentEvent e) {
+            @Override
+            public void componentHidden(java.awt.event.ComponentEvent e) {
                 btnOpenForm.setVisible(true);
-                layers.revalidate(); layers.repaint();
+                layers.revalidate();
+                layers.repaint();
             }
-            @Override public void componentShown(java.awt.event.ComponentEvent e) {
+
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent e) {
                 btnOpenForm.setVisible(false);
-                layers.revalidate(); layers.repaint();
+                layers.revalidate();
+                layers.repaint();
             }
         });
         btnOpenForm.setVisible(false); // awalnya tersembunyi karena sidebar terbuka
@@ -103,15 +110,24 @@ public class ReportIncidentPanel extends JPanel {
         bar.setBorder(BorderFactory.createLineBorder(UITheme.BORDER, 1, true));
 
         JButton btnOut = zBtn("-");
-        JButton btnIn  = zBtn("+");
+        JButton btnIn = zBtn("+");
         JButton btnRst = zBtn("o");
         lblZoom = new JLabel("100%");
         lblZoom.setFont(new Font(UITheme.FONT_FAMILY, Font.BOLD, 10));
         lblZoom.setForeground(UITheme.TEXT_SECONDARY);
 
-        btnOut.addActionListener(e -> { mapPanel.zoomOut(); updateZoomLabel(); });
-        btnIn .addActionListener(e -> { mapPanel.zoomIn();  updateZoomLabel(); });
-        btnRst.addActionListener(e -> { mapPanel.zoomReset(); updateZoomLabel(); });
+        btnOut.addActionListener(e -> {
+            mapPanel.zoomOut();
+            updateZoomLabel();
+        });
+        btnIn.addActionListener(e -> {
+            mapPanel.zoomIn();
+            updateZoomLabel();
+        });
+        btnRst.addActionListener(e -> {
+            mapPanel.zoomReset();
+            updateZoomLabel();
+        });
 
         bar.add(btnOut);
         bar.add(lblZoom);
@@ -160,8 +176,8 @@ public class ReportIncidentPanel extends JPanel {
         btnClose.setForeground(UITheme.TEXT_SECONDARY);
         btnClose.setBackground(new Color(40, 20, 20));
         btnClose.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(UITheme.BORDER, 1, true),
-            BorderFactory.createEmptyBorder(2, 8, 2, 8)));
+                BorderFactory.createLineBorder(UITheme.BORDER, 1, true),
+                BorderFactory.createEmptyBorder(2, 8, 2, 8)));
         btnClose.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnClose.addActionListener(e -> sidebarPanel.setVisible(false));
 
@@ -179,11 +195,11 @@ public class ReportIncidentPanel extends JPanel {
         form.setBorder(new EmptyBorder(0, 18, 18, 18));
 
         GridBagConstraints gc = new GridBagConstraints();
-        gc.insets  = new Insets(4, 0, 4, 0);
-        gc.anchor  = GridBagConstraints.WEST;
-        gc.fill    = GridBagConstraints.HORIZONTAL;
+        gc.insets = new Insets(4, 0, 4, 0);
+        gc.anchor = GridBagConstraints.WEST;
+        gc.fill = GridBagConstraints.HORIZONTAL;
         gc.weightx = 1;
-        gc.gridx   = 0;
+        gc.gridx = 0;
         int row = 0;
 
         // Pencarian Alamat / Bangunan (Geocoding)
@@ -195,13 +211,16 @@ public class ReportIncidentPanel extends JPanel {
         tfSearch.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
         tfSearch.setText("Cari alamat/bangunan...");
         tfSearch.addFocusListener(new java.awt.event.FocusAdapter() {
-            @Override public void focusGained(java.awt.event.FocusEvent e) {
+            @Override
+            public void focusGained(java.awt.event.FocusEvent e) {
                 if (tfSearch.getText().equals("Cari alamat/bangunan...")) {
                     tfSearch.setText("");
                     tfSearch.setForeground(UITheme.TEXT_PRIMARY);
                 }
             }
-            @Override public void focusLost(java.awt.event.FocusEvent e) {
+
+            @Override
+            public void focusLost(java.awt.event.FocusEvent e) {
                 if (tfSearch.getText().isEmpty()) {
                     tfSearch.setText("Cari alamat/bangunan...");
                     tfSearch.setForeground(UITheme.TEXT_MUTED);
@@ -263,7 +282,8 @@ public class ReportIncidentPanel extends JPanel {
         lblAddress.setBackground(UITheme.BG_DARK);
         addressExpanded = false;
         lblAddress.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (fullAddress != null && !fullAddress.isEmpty()) {
                     addressExpanded = !addressExpanded;
                     updateAddressLabel();
@@ -271,8 +291,6 @@ public class ReportIncidentPanel extends JPanel {
             }
         });
         row = addField(form, gc, row, "Alamat Lokasi (Nominatim)", lblAddress);
-
-
 
         // Korban Terjebak (Luas Area diisi admin di lapangan, bukan oleh warga)
         spVictims = sp(0, 0, 999, 1);
@@ -283,7 +301,8 @@ public class ReportIncidentPanel extends JPanel {
         cbBuildingCat.setBackground(UITheme.BG_SURFACE);
         cbBuildingCat.setForeground(UITheme.TEXT_PRIMARY);
         cbBuildingCat.setRenderer(new DefaultListCellRenderer() {
-            @Override public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f) {
+            @Override
+            public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f) {
                 super.getListCellRendererComponent(l, v, i, s, f);
                 setBackground(s ? UITheme.ACCENT : UITheme.BG_SURFACE);
                 setForeground(UITheme.TEXT_PRIMARY);
@@ -307,7 +326,7 @@ public class ReportIncidentPanel extends JPanel {
 
         // Badge preview objek terbakar
         JLabel lblPreview = new JLabel("Contoh: " + BuildingCategory.BANGUNAN.getSubTypes()[0]
-            + " (" + BuildingCategory.BANGUNAN.getLabel() + ")");
+                + " (" + BuildingCategory.BANGUNAN.getLabel() + ")");
         lblPreview.setFont(new Font(UITheme.FONT_FAMILY, Font.ITALIC, 10));
         lblPreview.setForeground(UITheme.TEXT_MUTED);
         Runnable updatePreview = () -> {
@@ -321,12 +340,10 @@ public class ReportIncidentPanel extends JPanel {
         gc.gridy = row++;
         form.add(lblPreview, gc);
 
-
         // Deskripsi
         JTextArea taDescLocal = ta(2);
         this.taDesc = taDescLocal;
         row = addField(form, gc, row, "Deskripsi Singkat", taDescLocal);
-
 
         gc.gridy = row;
         gc.weighty = 1;
@@ -375,25 +392,26 @@ public class ReportIncidentPanel extends JPanel {
         // Lokasi = koordinat GPS + alamat (jika terdeteksi)
         String addrText = fullAddress != null ? fullAddress.trim() : "";
         String fullLoc;
-        if (addrText.isEmpty() || addrText.equals("Klik peta untuk pilih titik...") || 
-            addrText.equals("Klik peta untuk deteksi alamat...") || addrText.equals("Mencari alamat...") || 
-            addrText.equals("Gagal mendapatkan alamat") || addrText.equals("Alamat tidak ditemukan")) {
+        if (addrText.isEmpty() || addrText.equals("Klik peta untuk pilih titik...") ||
+                addrText.equals("Klik peta untuk deteksi alamat...") || addrText.equals("Mencari alamat...") ||
+                addrText.equals("Gagal mendapatkan alamat") || addrText.equals("Alamat tidak ditemukan")) {
             fullLoc = String.format("Lat: %.5f, Lon: %.5f", mapLat, mapLon);
         } else {
             fullLoc = String.format("Lat: %.5f, Lon: %.5f (%s)", mapLat, mapLon, addrText);
         }
 
-        String desc    = taDesc.getText().trim();
-        if (desc.isEmpty()) desc = "Kebakaran dilaporkan oleh warga.";
+        String desc = taDesc.getText().trim();
+        if (desc.isEmpty())
+            desc = "Kebakaran dilaporkan oleh warga.";
 
         IncidentSeverity severity = IncidentSeverity.UNDETERMINED;
         int intensity = 5;
 
         String err = IncidentService.reportIncident(
-            fullLoc, severity,
-            desc, (int) spVictims.getValue(),
-            0, // area default 0; diisi admin di lapangan untuk Lahan Kosong
-            intensity, user);
+                fullLoc, severity,
+                desc, (int) spVictims.getValue(),
+                0, // area default 0; diisi admin di lapangan untuk Lahan Kosong
+                intensity, user);
 
         if (err != null) {
             lblResult.setForeground(UITheme.DANGER);
@@ -415,14 +433,15 @@ public class ReportIncidentPanel extends JPanel {
     }
 
     private void showNotification(String coord) {
-        JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(this), "Laporan Diterima", java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+        JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(this), "Laporan Diterima",
+                java.awt.Dialog.ModalityType.APPLICATION_MODAL);
         dlg.setUndecorated(true);
 
         JPanel panel = new JPanel(new BorderLayout(0, 12));
         panel.setBackground(UITheme.BG_CARD);
         panel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(UITheme.SUCCESS, 2, true),
-            BorderFactory.createEmptyBorder(24, 32, 24, 32)));
+                BorderFactory.createLineBorder(UITheme.SUCCESS, 2, true),
+                BorderFactory.createEmptyBorder(24, 32, 24, 32)));
 
         JLabel icon = new JLabel();
         icon.setIcon(new VectorIcon(VectorIcon.Type.CHECK, 40, UITheme.SUCCESS));
@@ -433,8 +452,9 @@ public class ReportIncidentPanel extends JPanel {
         title.setForeground(UITheme.SUCCESS);
 
         JLabel msg = new JLabel(
-            "<html><center>Koordinat: <b>" + coord + "</b><br>Notifikasi dikirim ke petugas terdekat.</center></html>",
-            SwingConstants.CENTER);
+                "<html><center>Koordinat: <b>" + coord
+                        + "</b><br>Notifikasi dikirim ke petugas terdekat.</center></html>",
+                SwingConstants.CENTER);
         msg.setFont(UITheme.FONT_BODY);
         msg.setForeground(UITheme.TEXT_SECONDARY);
 
@@ -453,7 +473,8 @@ public class ReportIncidentPanel extends JPanel {
         content.add(Box.createVerticalStrut(18));
         content.add(btnOk);
         for (Component c : content.getComponents())
-            if (c instanceof JComponent) ((JComponent)c).setAlignmentX(CENTER_ALIGNMENT);
+            if (c instanceof JComponent)
+                ((JComponent) c).setAlignmentX(CENTER_ALIGNMENT);
 
         panel.add(content, BorderLayout.CENTER);
         dlg.add(panel);
@@ -475,8 +496,10 @@ public class ReportIncidentPanel extends JPanel {
         spVictims.setValue(0);
 
         lblResult.setText(" ");
-        mapLat = Double.NaN; mapLon = Double.NaN;
-        if (mapPanel != null) mapPanel.clearSelection();
+        mapLat = Double.NaN;
+        mapLon = Double.NaN;
+        if (mapPanel != null)
+            mapPanel.clearSelection();
     }
 
     // helpers
@@ -531,8 +554,15 @@ public class ReportIncidentPanel extends JPanel {
         a.setWrapStyleWord(true);
         a.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
         a.addFocusListener(new java.awt.event.FocusAdapter() {
-            @Override public void focusGained(java.awt.event.FocusEvent e) { a.repaint(); }
-            @Override public void focusLost(java.awt.event.FocusEvent e) { a.repaint(); }
+            @Override
+            public void focusGained(java.awt.event.FocusEvent e) {
+                a.repaint();
+            }
+
+            @Override
+            public void focusLost(java.awt.event.FocusEvent e) {
+                a.repaint();
+            }
         });
         return a;
     }
@@ -552,7 +582,8 @@ public class ReportIncidentPanel extends JPanel {
             lblAddress.setText("Klik peta untuk deteksi alamat...");
             return;
         }
-        if (fullAddress.equals("Mencari alamat...") || fullAddress.equals("Klik peta untuk deteksi alamat...") || fullAddress.equals("Klik peta untuk pilih titik...")) {
+        if (fullAddress.equals("Mencari alamat...") || fullAddress.equals("Klik peta untuk deteksi alamat...")
+                || fullAddress.equals("Klik peta untuk pilih titik...")) {
             lblAddress.setText(fullAddress);
             return;
         }
@@ -560,7 +591,8 @@ public class ReportIncidentPanel extends JPanel {
         if (!addressExpanded && fullAddress.length() > MAX_ADDR_LEN) {
             String truncated = fullAddress.substring(0, MAX_ADDR_LEN);
             String escapedTruncated = truncated.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
-            lblAddress.setText("<html><body style='width:240px'>" + escapedTruncated + "… <i style='color:#FFB347'>(klik untuk lihat lengkap)</i></body></html>");
+            lblAddress.setText("<html><body style='width:240px'>" + escapedTruncated
+                    + "… <i style='color:#FFB347'>(klik untuk lihat lengkap)</i></body></html>");
         } else {
             lblAddress.setText("<html><body style='width:240px'>" + escaped + "</body></html>");
         }
@@ -588,9 +620,8 @@ public class ReportIncidentPanel extends JPanel {
         new Thread(() -> {
             try {
                 String urlStr = String.format(
-                    "https://nominatim.openstreetmap.org/reverse?lat=%.7f&lon=%.7f&format=json&addressdetails=1",
-                    lat, lon
-                );
+                        "https://nominatim.openstreetmap.org/reverse?lat=%.7f&lon=%.7f&format=json&addressdetails=1",
+                        lat, lon);
                 java.net.URL url = new java.net.URL(urlStr);
                 java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
@@ -601,8 +632,7 @@ public class ReportIncidentPanel extends JPanel {
                 int respCode = conn.getResponseCode();
                 if (respCode == 200) {
                     java.io.BufferedReader in = new java.io.BufferedReader(
-                        new java.io.InputStreamReader(conn.getInputStream(), "UTF-8")
-                    );
+                            new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"));
                     StringBuilder response = new StringBuilder();
                     String line;
                     while ((line = in.readLine()) != null) {
@@ -643,7 +673,7 @@ public class ReportIncidentPanel extends JPanel {
             try {
                 String encoded = java.net.URLEncoder.encode(query + " Surabaya", "UTF-8");
                 String urlStr = "https://nominatim.openstreetmap.org/search?q=" + encoded
-                    + "&format=json&limit=1&bounded=1&viewbox=112.55,-7.15,112.88,-7.48";
+                        + "&format=json&limit=1&bounded=1&viewbox=112.55,-7.15,112.88,-7.48";
                 java.net.URL url = new java.net.URL(urlStr);
                 java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
@@ -654,10 +684,11 @@ public class ReportIncidentPanel extends JPanel {
                 int respCode = conn.getResponseCode();
                 if (respCode == 200) {
                     java.io.BufferedReader in = new java.io.BufferedReader(
-                        new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"));
+                            new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"));
                     StringBuilder response = new StringBuilder();
                     String line;
-                    while ((line = in.readLine()) != null) response.append(line);
+                    while ((line = in.readLine()) != null)
+                        response.append(line);
                     in.close();
 
                     String body = response.toString().trim();
@@ -738,7 +769,8 @@ public class ReportIncidentPanel extends JPanel {
     private String extractJsonString(String json, String key) {
         String search = "\"" + key + "\":\"";
         int start = json.indexOf(search);
-        if (start == -1) return null;
+        if (start == -1)
+            return null;
         start += search.length();
 
         StringBuilder sb = new StringBuilder();

@@ -21,7 +21,7 @@ public class UserHistoryPanel extends JPanel {
     private JToggleButton btnMyOnly;
 
     private static final String[] COLS = {
-        "ID Insiden", "Lokasi", "Tingkat", "Skor Prioritas", "Kendaraan", "Diselesaikan oleh", "Waktu Selesai"
+            "ID Insiden", "Lokasi", "Tingkat", "Skor Prioritas", "Kendaraan", "Diselesaikan oleh", "Waktu Selesai"
     };
 
     public UserHistoryPanel() {
@@ -76,7 +76,10 @@ public class UserHistoryPanel extends JPanel {
         header.add(rightBtns, BorderLayout.EAST);
 
         tableModel = new DefaultTableModel(COLS, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
         table = new JTable(tableModel);
         table.setFont(UITheme.FONT_BODY);
@@ -89,7 +92,8 @@ public class UserHistoryPanel extends JPanel {
         UITheme.styleTableHeader(table, UITheme.FONT_SUB);
 
         table.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) showDetail(table.getSelectedRow());
+            if (!e.getValueIsAdjusting())
+                showDetail(table.getSelectedRow());
         });
 
         JScrollPane scroll = new JScrollPane(table);
@@ -107,8 +111,8 @@ public class UserHistoryPanel extends JPanel {
 
         JScrollPane scrollDetail = new JScrollPane(taDetail);
         scrollDetail.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(UITheme.BORDER), "Detail Laporan & Sumber Daya",
-            0, 0, UITheme.FONT_SMALL, UITheme.TEXT_SECONDARY));
+                BorderFactory.createLineBorder(UITheme.BORDER), "Detail Laporan & Sumber Daya",
+                0, 0, UITheme.FONT_SMALL, UITheme.TEXT_SECONDARY));
         scrollDetail.setPreferredSize(new Dimension(0, 150));
 
         JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, scroll, scrollDetail);
@@ -130,15 +134,16 @@ public class UserHistoryPanel extends JPanel {
         int count = 0;
         for (ReportHistory rh : history) {
             boolean mine = rh.getIncident().getReportedBy().equals(myUname);
-            if (myOnly && !mine) continue;
-            tableModel.addRow(new Object[]{
-                rh.getIncident().getIncidentId(),
-                truncate(rh.getIncident().getLocation(), 28),
-                rh.getIncident().getSeverity().getLabel(),
-                String.format("%.1f", rh.getIncident().getPriorityScore()),
-                rh.getTrucksDeployed() + " kendaraan",
-                rh.getResolvedBy(),
-                rh.getFormattedResolvedTime()
+            if (myOnly && !mine)
+                continue;
+            tableModel.addRow(new Object[] {
+                    rh.getIncident().getIncidentId(),
+                    truncate(rh.getIncident().getLocation(), 28),
+                    rh.getIncident().getSeverity().getLabel(),
+                    String.format("%.1f", rh.getIncident().getPriorityScore()),
+                    rh.getTrucksDeployed() + " kendaraan",
+                    rh.getResolvedBy(),
+                    rh.getFormattedResolvedTime()
             });
             count++;
         }
@@ -147,29 +152,32 @@ public class UserHistoryPanel extends JPanel {
     }
 
     private void showDetail(int row) {
-        if (row < 0) return;
+        if (row < 0)
+            return;
         String myUname = Database.getCurrentUser() != null ? Database.getCurrentUser().getUsername() : "";
         boolean myOnly = btnMyOnly.isSelected();
 
         ArrayList<ReportHistory> filtered = new ArrayList<>();
         for (ReportHistory rh : Database.getReportHistory()) {
             boolean mine = rh.getIncident().getReportedBy().equals(myUname);
-            if (!myOnly || mine) filtered.add(rh);
+            if (!myOnly || mine)
+                filtered.add(rh);
         }
-        if (row >= filtered.size()) return;
+        if (row >= filtered.size())
+            return;
         ReportHistory rh = filtered.get(row);
 
         StringBuilder sb = new StringBuilder();
         sb.append("Insiden  : ").append(rh.getIncident().getIncidentId())
-          .append("  |  Lokasi: ").append(rh.getIncident().getLocation()).append("\n");
+                .append("  |  Lokasi: ").append(rh.getIncident().getLocation()).append("\n");
         sb.append("Pelapor  : ").append(rh.getIncident().getReportedBy())
-          .append("  |  Selesai oleh: ").append(rh.getResolvedBy()).append("\n");
+                .append("  |  Selesai oleh: ").append(rh.getResolvedBy()).append("\n");
         sb.append("Deskripsi: ").append(rh.getIncident().getDescription()).append("\n");
         sb.append("Catatan  : ").append(rh.getNotes()).append("\n\n");
         sb.append("Sumber Daya yang Digunakan:\n");
         for (Map.Entry<Resource, Integer> entry : rh.getResourcesUsed().entrySet()) {
             sb.append(String.format("  %-25s : %d\n",
-                entry.getKey().getDisplayName(), entry.getValue()));
+                    entry.getKey().getDisplayName(), entry.getValue()));
         }
         taDetail.setText(sb.toString());
         taDetail.setCaretPosition(0);

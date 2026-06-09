@@ -6,9 +6,9 @@ import java.awt.*;
 import java.awt.geom.Path2D;
 
 public class VectorIcon implements Icon {
-    
+
     public enum Type {
-        FIRE, REPORT, STATUS, HISTORY, LOGOUT, TRUCK, CHECK, 
+        FIRE, REPORT, STATUS, HISTORY, LOGOUT, TRUCK, CHECK,
         DICE, SETTINGS, PEOPLE, WRENCH, DROP, PLUS, ALERT, USER, BOLT, REFRESH, BACK
     }
 
@@ -25,20 +25,16 @@ public class VectorIcon implements Icon {
     @Override
     public void paintIcon(Component component, Graphics graphics, int xOffset, int yOffset) {
         Graphics2D graphics2d = (Graphics2D) graphics.create();
-        
-        
+
         graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         graphics2d.translate(xOffset, yOffset);
-        
-        
+
         double scaleFactor = iconSize / 24.0;
         graphics2d.scale(scaleFactor, scaleFactor);
-        
-        
+
         graphics2d.setColor(iconColor);
         graphics2d.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        
-        
+
         switch (iconType) {
             case FIRE:
                 drawFireIcon(graphics2d);
@@ -85,7 +81,7 @@ public class VectorIcon implements Icon {
                 break;
             case SETTINGS:
                 graphics2d.drawOval(7, 7, 10, 10);
-                for(int i = 0; i < 8; i++) {
+                for (int i = 0; i < 8; i++) {
                     graphics2d.drawLine(12, 2, 12, 5);
                     graphics2d.rotate(Math.PI / 4, 12, 12);
                 }
@@ -155,7 +151,7 @@ public class VectorIcon implements Icon {
                 graphics2d.drawLine(4, 12, 10, 18);
                 break;
         }
-        
+
         graphics2d.dispose();
     }
 
@@ -168,7 +164,6 @@ public class VectorIcon implements Icon {
         outerFlame.curveTo(20, 16, 18, 22, 12, 22);
         g2.fill(outerFlame);
 
-        
         g2.setColor(UITheme.BG_DARK);
         Path2D innerFlame = new Path2D.Double();
         innerFlame.moveTo(12, 18);
@@ -180,8 +175,12 @@ public class VectorIcon implements Icon {
     }
 
     @Override
-    public int getIconWidth() { return iconSize; }
+    public int getIconWidth() {
+        return iconSize;
+    }
 
     @Override
-    public int getIconHeight() { return iconSize; }
+    public int getIconHeight() {
+        return iconSize;
+    }
 }

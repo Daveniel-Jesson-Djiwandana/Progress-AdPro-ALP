@@ -22,7 +22,7 @@ public class ViewStatusPanel extends JPanel {
     private Timer autoRefreshTimer;
 
     private static final String[] COLS = {
-        "ID", "Lokasi", "Tingkat", "Bangunan", "Korban", "Progress", "Status", "Dilaporkan"
+            "ID", "Lokasi", "Tingkat", "Bangunan", "Korban", "Progress", "Status", "Dilaporkan"
     };
 
     public ViewStatusPanel() {
@@ -74,15 +74,20 @@ public class ViewStatusPanel extends JPanel {
         infoBanner.setHasBorder(true);
         infoBanner.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
         JLabel infoText = new JLabel(
-            "<html>Halaman ini menampilkan status semua laporan kebakaran aktif. " +
-            "Status diperbarui secara real-time oleh petugas pemadam kebakaran.</html>");
+                "<html>Halaman ini menampilkan status semua laporan kebakaran aktif. " +
+                        "Status diperbarui secara real-time oleh petugas pemadam kebakaran.</html>");
         infoText.setFont(UITheme.FONT_SMALL);
         infoText.setForeground(UITheme.TEXT_SECONDARY);
         infoBanner.add(infoText);
 
         tableModel = new DefaultTableModel(COLS, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-            @Override public Class<?> getColumnClass(int c) {
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+
+            @Override
+            public Class<?> getColumnClass(int c) {
                 return c == 5 ? Integer.class : Object.class;
             }
         };
@@ -98,9 +103,11 @@ public class ViewStatusPanel extends JPanel {
 
         // Severity renderer
         table.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override public Component getTableCellRendererComponent(JTable t, Object val,
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object val,
                     boolean sel, boolean focus, int row, int col) {
-                if (val instanceof IncidentSeverity) return StatusBadge.forSeverity((IncidentSeverity) val);
+                if (val instanceof IncidentSeverity)
+                    return StatusBadge.forSeverity((IncidentSeverity) val);
                 return super.getTableCellRendererComponent(t, val, sel, focus, row, col);
             }
         });
@@ -113,7 +120,9 @@ public class ViewStatusPanel extends JPanel {
                 bar.setFont(UITheme.FONT_SMALL);
                 bar.setBackground(UITheme.BG_CARD);
             }
-            @Override public Component getTableCellRendererComponent(JTable t, Object val,
+
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object val,
                     boolean sel, boolean focus, int row, int col) {
                 int pct = (val instanceof Integer) ? (Integer) val : 0;
                 bar.setValue(pct);
@@ -134,14 +143,16 @@ public class ViewStatusPanel extends JPanel {
 
         // Status renderer
         table.getColumnModel().getColumn(6).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override public Component getTableCellRendererComponent(JTable t, Object val,
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object val,
                     boolean sel, boolean focus, int row, int col) {
-                if (val instanceof IncidentStatus) return StatusBadge.forStatus((IncidentStatus) val);
+                if (val instanceof IncidentStatus)
+                    return StatusBadge.forStatus((IncidentStatus) val);
                 return super.getTableCellRendererComponent(t, val, sel, focus, row, col);
             }
         });
 
-        int[] widths = {80, 200, 75, 70, 60, 120, 100, 110};
+        int[] widths = { 80, 200, 75, 70, 60, 120, 100, 110 };
         for (int i = 0; i < widths.length; i++)
             table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
 
@@ -168,22 +179,22 @@ public class ViewStatusPanel extends JPanel {
         int count = 0;
         for (Incident inc : Database.getAllIncidents()) {
             if (inc.getStatus() != IncidentStatus.RESOLVED) {
-                tableModel.addRow(new Object[]{
-                    inc.getIncidentId(),
-                    truncate(inc.getLocation(), 28),
-                    inc.getSeverity(),
-                    inc.getBuildingLabel(),
-                    inc.getNumVictimsTrapped() + " org",
-                    inc.getDispatchProgress(),
-                    inc.getStatus(),
-                    inc.getFormattedTime()
+                tableModel.addRow(new Object[] {
+                        inc.getIncidentId(),
+                        truncate(inc.getLocation(), 28),
+                        inc.getSeverity(),
+                        inc.getBuildingLabel(),
+                        inc.getNumVictimsTrapped() + " org",
+                        inc.getDispatchProgress(),
+                        inc.getStatus(),
+                        inc.getFormattedTime()
                 });
                 count++;
             }
         }
         lblCount.setText(count + " insiden aktif saat ini");
         lblLastUpdate.setText("Terakhir diperbarui: " +
-            new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date()));
+                new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date()));
     }
 
     private String truncate(String s, int max) {

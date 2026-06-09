@@ -20,7 +20,7 @@ public class AdminHistoryPanel extends JPanel {
     private JTextArea taDetail;
 
     private static final String[] COLS = {
-        "ID Insiden", "Lokasi", "Tingkat", "Kendaraan", "Diselesaikan oleh", "Waktu Selesai"
+            "ID Insiden", "Lokasi", "Tingkat", "Kendaraan", "Diselesaikan oleh", "Waktu Selesai"
     };
 
     public AdminHistoryPanel() {
@@ -53,12 +53,16 @@ public class AdminHistoryPanel extends JPanel {
         header.setOpaque(false);
         JPanel left = new JPanel(new GridLayout(2, 1, 0, 2));
         left.setOpaque(false);
-        left.add(title); left.add(lblCount);
+        left.add(title);
+        left.add(lblCount);
         header.add(left, BorderLayout.WEST);
         header.add(btnRefresh, BorderLayout.EAST);
 
         tableModel = new DefaultTableModel(COLS, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
         table = new JTable(tableModel);
         table.setFont(UITheme.FONT_BODY);
@@ -80,7 +84,8 @@ public class AdminHistoryPanel extends JPanel {
         taDetail.setText("Pilih baris untuk melihat detail sumber daya yang digunakan.");
 
         table.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) showDetail(table.getSelectedRow());
+            if (!e.getValueIsAdjusting())
+                showDetail(table.getSelectedRow());
         });
 
         JScrollPane scroll = new JScrollPane(table);
@@ -89,8 +94,8 @@ public class AdminHistoryPanel extends JPanel {
 
         JScrollPane scrollDetail = new JScrollPane(taDetail);
         scrollDetail.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(UITheme.BORDER), "Detail Sumber Daya",
-            0, 0, UITheme.FONT_SMALL, UITheme.TEXT_SECONDARY));
+                BorderFactory.createLineBorder(UITheme.BORDER), "Detail Sumber Daya",
+                0, 0, UITheme.FONT_SMALL, UITheme.TEXT_SECONDARY));
         scrollDetail.setPreferredSize(new Dimension(0, 140));
 
         JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, scroll, scrollDetail);
@@ -107,13 +112,13 @@ public class AdminHistoryPanel extends JPanel {
         tableModel.setRowCount(0);
         ArrayList<ReportHistory> history = Database.getReportHistory();
         for (ReportHistory rh : history) {
-            tableModel.addRow(new Object[]{
-                rh.getIncident().getIncidentId(),
-                rh.getIncident().getLocation(),
-                rh.getIncident().getSeverity().getLabel(),
-                rh.getTrucksDeployed() + " kendaraan",
-                rh.getResolvedBy(),
-                rh.getFormattedResolvedTime()
+            tableModel.addRow(new Object[] {
+                    rh.getIncident().getIncidentId(),
+                    rh.getIncident().getLocation(),
+                    rh.getIncident().getSeverity().getLabel(),
+                    rh.getTrucksDeployed() + " kendaraan",
+                    rh.getResolvedBy(),
+                    rh.getFormattedResolvedTime()
             });
         }
         lblCount.setText(history.size() + " insiden selesai");
@@ -121,18 +126,20 @@ public class AdminHistoryPanel extends JPanel {
     }
 
     private void showDetail(int row) {
-        if (row < 0) return;
+        if (row < 0)
+            return;
         ArrayList<ReportHistory> history = Database.getReportHistory();
-        if (row >= history.size()) return;
+        if (row >= history.size())
+            return;
         ReportHistory rh = history.get(row);
         StringBuilder sb = new StringBuilder();
         sb.append("Insiden : ").append(rh.getIncident().getIncidentId())
-          .append("  |  Lokasi: ").append(rh.getIncident().getLocation()).append("\n");
+                .append("  |  Lokasi: ").append(rh.getIncident().getLocation()).append("\n");
         sb.append("Catatan  : ").append(rh.getNotes()).append("\n\n");
         sb.append("Sumber Daya yang Digunakan:\n");
         for (Map.Entry<Resource, Integer> entry : rh.getResourcesUsed().entrySet()) {
             sb.append(String.format("  %-25s : %d\n",
-                entry.getKey().getDisplayName(), entry.getValue()));
+                    entry.getKey().getDisplayName(), entry.getValue()));
         }
         taDetail.setText(sb.toString());
     }
