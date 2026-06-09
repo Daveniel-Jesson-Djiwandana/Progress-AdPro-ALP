@@ -299,7 +299,7 @@ public class ReportIncidentPanel extends JPanel {
         row = addField(form, gc, row, "Alamat Lokasi (Nominatim)", lblAddress);
 
         // Korban Terjebak (Luas Area diisi admin di lapangan, bukan oleh warga)
-        spVictims = sp(0, 0, 999999999, 1);
+        spVictims = sp(0, 0, 9999999999999999L, 1);
         row = addField(form, gc, row, "Korban Terjebak", spVictims);
 
         // ── Kategori Bangunan ─────────────────────────────────────────────────
@@ -322,14 +322,6 @@ public class ReportIncidentPanel extends JPanel {
         cbBuildingSubType.setBackground(UITheme.BG_SURFACE);
         cbBuildingSubType.setForeground(UITheme.TEXT_PRIMARY);
         cbBuildingSubType.setEditable(false);
-        cbBuildingCat.addActionListener(e -> {
-            BuildingCategory cat = (BuildingCategory) cbBuildingCat.getSelectedItem();
-            if (cat != null) {
-                cbBuildingSubType.setModel(new DefaultComboBoxModel<>(cat.getSubTypes()));
-            }
-        });
-        row = addField(form, gc, row, "Jenis Bangunan", cbBuildingSubType);
-
         // Badge preview objek terbakar
         JLabel lblPreview = new JLabel("Contoh: " + BuildingCategory.BANGUNAN.getSubTypes()[0]
                 + " (" + BuildingCategory.BANGUNAN.getLabel() + ")");
@@ -341,7 +333,16 @@ public class ReportIncidentPanel extends JPanel {
             if (cat != null && subType != null)
                 lblPreview.setText("Objek terbakar: " + subType + " (" + cat.getLabel() + ")");
         };
-        cbBuildingCat.addActionListener(e -> updatePreview.run());
+
+        cbBuildingCat.addActionListener(e -> {
+            BuildingCategory cat = (BuildingCategory) cbBuildingCat.getSelectedItem();
+            if (cat != null) {
+                cbBuildingSubType.setModel(new DefaultComboBoxModel<>(cat.getSubTypes()));
+            }
+            updatePreview.run();
+        });
+        row = addField(form, gc, row, "Jenis Bangunan", cbBuildingSubType);
+
         cbBuildingSubType.addActionListener(e -> updatePreview.run());
         gc.gridy = row++;
         form.add(lblPreview, gc);
@@ -415,7 +416,7 @@ public class ReportIncidentPanel extends JPanel {
 
         String err = IncidentService.reportIncident(
                 fullLoc, severity,
-                desc, (int) spVictims.getValue(),
+                desc, ((Number) spVictims.getValue()).intValue(),
                 0, // area default 0; diisi admin di lapangan untuk Lahan Kosong
                 intensity, user);
 
@@ -614,7 +615,7 @@ public class ReportIncidentPanel extends JPanel {
         }
     }
 
-    private JSpinner sp(int v, int min, int max, int step) {
+    private JSpinner sp(long v, long min, long max, long step) {
         JSpinner s = new JSpinner(new SpinnerNumberModel(v, min, max, step));
         s.setFont(UITheme.FONT_BODY);
         ((JSpinner.DefaultEditor) s.getEditor()).getTextField().setForeground(UITheme.TEXT_PRIMARY);

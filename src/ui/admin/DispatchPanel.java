@@ -1102,28 +1102,6 @@ public class DispatchPanel extends JPanel {
         return null;
     }
 
-    private double getDijkstraDistance(FireStation station, Incident inc) {
-        double[] coords = FireStationGraph.parseGpsCoord(inc.getLocation());
-        if (coords == null) return Double.MAX_VALUE;
-
-        FireStationGraph graph = Database.getRoadNetwork();
-        FireStationGraph.Node incidentNode = new FireStationGraph.Node("TempDistNode", coords[0], coords[1]);
-        graph.addNode(incidentNode);
-
-        FireStationGraph.Node closestNode = graph.findClosestNode(coords[0], coords[1]);
-        if (closestNode != null) {
-            graph.addEdge("TempDistNode", closestNode.id);
-        }
-
-        Map<FireStationGraph.Node, Double> dists = graph.dijkstra(incidentNode);
-        FireStationGraph.Node sNode = new FireStationGraph.Node(station.getName(), station.getLatitude(), station.getLongitude());
-        Double d = dists.get(sNode);
-
-        graph.removeNode(incidentNode);
-        double finalDist = (d != null && d < 999999.0) ? d :
-            FireStationGraph.haversineDistance(coords[0], coords[1], station.getLatitude(), station.getLongitude());
-        return finalDist;
-    }
 
     private String adminName() {
         return Database.getCurrentUser() != null ? Database.getCurrentUser().getName() : "Admin";
